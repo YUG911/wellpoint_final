@@ -5,11 +5,11 @@ from accounts.models import Clinic, User, DayMaster
 class Doctor(models.Model):
     doctor_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, db_column='user_id')
-    doctor_name = models.CharField(max_length=255)
+    doctor_name = models.CharField(max_length=100)
     experience = models.IntegerField(null=True, blank=True)
     new_patient_fee = models.DecimalField(max_digits=10, decimal_places=2)
     old_patient_fee = models.DecimalField(max_digits=10, decimal_places=2)
-    about = models.CharField(max_length=500, null=True, blank=True)
+    about = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -22,7 +22,7 @@ class Doctor(models.Model):
 
 class SpecializationMaster(models.Model):
     specialization_id = models.AutoField(primary_key=True)
-    specialization_name = models.CharField(max_length=255)
+    specialization_name = models.CharField(max_length=100)
 
     class Meta:
         db_table = 'specialization_master'
@@ -45,7 +45,7 @@ class DoctorSpecialization(models.Model):
 
 class QualificationMaster(models.Model):
     qualification_id = models.AutoField(primary_key=True)
-    qualification_name = models.CharField(max_length=255)
+    qualification_name = models.CharField(max_length=100)
 
     class Meta:
         db_table = 'qualification_master'
@@ -99,7 +99,7 @@ class Review(models.Model):
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, db_column='doctor_id')
     appointment = models.OneToOneField('appointments.Appointment', on_delete=models.CASCADE, db_column='appointment_id')
     rating = models.DecimalField(max_digits=2, decimal_places=1)
-    review_text = models.CharField(max_length=500, null=True, blank=True)
+    review_text = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

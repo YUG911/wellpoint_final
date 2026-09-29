@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.forms import (
     LoginForm, RegisterForm, PatientProfileForm,
-    DoctorProfileForm, ClinicForm, AdminForm
+    DoctorProfileForm, ClinicForm, AdminForm, UserProfileForm
 )
 from accounts.models import (
     User, Role, Patient, Clinic, ClinicStaff, Admin,
@@ -41,7 +41,7 @@ def login_view(request):
                 return render(request, 'accounts/login.html', {'form': form})
 
             if check_password(password, user.password_hash):
-                if user.account_status != 'active':
+                if user.account_status.lower() != 'active':
                     messages.error(request, "Your account is not active.")
                     return render(request, 'accounts/login.html', {'form': form})
 
@@ -80,8 +80,7 @@ def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            role_id = int(form.cleaned_data['role'])
-            role = get_object_or_404(Role, role_id=role_id)
+            role = form.cleaned_data['role']
             user = User(
                 full_name=form.cleaned_data['full_name'],
                 email=form.cleaned_data['email'],
@@ -96,13 +95,13 @@ def register(request):
             request.session['reg_user_id'] = user.user_id
             request.session['reg_role'] = role.role_name
 
-            if role.role_name == 'Patient':
+            if role.role_name.lower() == 'patient':
                 return redirect('register_patient')
-            if role.role_name == 'Doctor':
+            if role.role_name.lower() == 'doctor':
                 return redirect('register_doctor')
-            if role.role_name == 'Clinic':
+            if role.role_name.lower() == 'clinic':
                 return redirect('register_clinic')
-            if role.role_name == 'Clinic Staff':
+            if role.role_name.lower() == 'clinic staff':
                 return redirect('register_staff')
     else:
         form = RegisterForm()
@@ -110,7 +109,7 @@ def register(request):
 
 
 def register_patient(request):
-    user_id = request.session.get('reg_user_id')
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
@@ -134,7 +133,7 @@ def register_patient(request):
 
 
 def register_doctor(request):
-    user_id = request.session.get('reg_user_id')
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
@@ -149,17 +148,11 @@ def register_doctor(request):
                 old_patient_fee=form.cleaned_data['old_patient_fee'],
                 about=form.cleaned_data.get('about', '')
             )
-            for spec in form.cleaned_data['specializations']:
-                SpecializationMaster.objects.get_or_create(specialization_name=spec)
-            for qual in form.cleaned_data['qualifications']:
-                QualificationMaster.objects.get_or_create(qualification_name=qual)
             from doctors.models import DoctorSpecialization, DoctorQualification
             for spec in form.cleaned_data['specializations']:
-                spec_obj, _ = SpecializationMaster.objects.get_or_create(specialization_name=spec)
-                DoctorSpecialization.objects.create(doctor=doctor, specialization=spec_obj)
+                DoctorSpecialization.objects.get_or_create(doctor=doctor, specialization=spec)
             for qual in form.cleaned_data['qualifications']:
-                qual_obj, _ = QualificationMaster.objects.get_or_create(qualification_name=qual)
-                DoctorQualification.objects.create(doctor=doctor, qualification=qual_obj)
+                DoctorQualification.objects.get_or_create(doctor=doctor, qualification=qual)
             del request.session['reg_user_id']
             del request.session['reg_role']
             messages.success(request, "Registration complete! Your account is pending admin verification.")
@@ -170,7 +163,7 @@ def register_doctor(request):
 
 
 def register_clinic(request):
-    user_id = request.session.get('reg_user_id')
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     states = StateMaster.objects.all()
@@ -199,7 +192,7 @@ def register_clinic(request):
 
 
 def register_staff(request):
-    user_id = request.session.get('reg_user_id')
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
@@ -230,7 +223,10 @@ def get_user_obj(request):
 @role_required('patient')
 def patient_dashboard(request):
     user = get_user_obj(request)
-    patient = get_object_or_404(Patient, user=user)
+    patient = Patient.objects.filter(user=user).first()
+    if not patient:
+        messages.warning(request, 'Please complete your patient profile.')
+        return redirect('register_patient')
 
     pending = Appointment.objects.filter(patient=patient, status__in=['Pending', 'Confirmed'])
     completed = Appointment.objects.filter(patient=patient, status='Completed')
@@ -250,7 +246,12 @@ def patient_dashboard(request):
 @role_required('doctor')
 def doctor_dashboard(request):
     user = get_user_obj(request)
-    doctor = get_object_or_404(Doctor, user=user)
+    doctor = Doctor.objects.filter(user=user).first()
+    if not doctor:
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        messages.warning(request, 'Please complete your doctor profile.')
+        return redirect('register_doctor')
 
     today = date.today()
     todays_appointments = Appointment.objects.filter(doctor=doctor, appointment_date=today)
@@ -283,8 +284,11 @@ def doctor_dashboard(request):
 @role_required('clinic')
 def clinic_dashboard(request):
     user = get_user_obj(request)
-    clinic = get_object_or_404(Clinic, user=user)
-    doctors = Doctor.objects.filter(doctorclinic__clinic=clinic)
+    clinic = Clinic.objects.filter(user=user).first()
+    if not clinic:
+        messages.warning(request, 'Please complete your clinic profile.')
+        return redirect('register_clinic')
+    doctors = Doctor.objects.filter(doctor_clinic__clinic=clinic)
 
     context = {
         'clinic': clinic,
@@ -299,7 +303,10 @@ def clinic_dashboard(request):
 @role_required('clinic staff')
 def staff_dashboard(request):
     user = get_user_obj(request)
-    staff = get_object_or_404(ClinicStaff, user=user)
+    staff = ClinicStaff.objects.filter(user=user).first()
+    if not staff:
+        messages.warning(request, 'Please complete your staff profile.')
+        return redirect('register_staff')
     clinic = staff.clinic
     appointments = Appointment.objects.filter(clinic=clinic)
 
@@ -317,7 +324,7 @@ def staff_dashboard(request):
 @role_required('admin')
 def admin_dashboard(request):
     verified = User.objects.filter(is_verified=True).count()
-    pending = User.objects.filter(is_verified=False).count()
+    pending = User.objects.filter(is_verified=False).exclude(account_status='rejected').count()
     total_patients = User.objects.filter(role__role_name='Patient').count()
     total_doctors = User.objects.filter(role__role_name='Doctor').count()
     total_clinics = User.objects.filter(role__role_name='Clinic').count()
@@ -329,7 +336,7 @@ def admin_dashboard(request):
         'total_patients': total_patients,
         'total_doctors': total_doctors,
         'total_clinics': total_clinics,
-        'unverified_users': User.objects.filter(is_verified=False)[:5],
+        'unverified_users': User.objects.filter(is_verified=False).exclude(account_status='rejected')[:5],
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
@@ -339,7 +346,12 @@ def admin_dashboard(request):
 @login_required
 def profile(request):
     user = get_user_obj(request)
-    return render(request, 'accounts/profile.html', {'user': user})
+    form = UserProfileForm(request.POST or None, instance=user)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Your profile has been updated.')
+        return redirect('profile')
+    return render(request, 'accounts/profile.html', {'user': user, 'form': form})
 
 
 # ─── VERIFICATION ───────────────────────────────────────────────
@@ -352,8 +364,11 @@ def verify_user(request):
         action = request.POST.get('action')
         remarks = request.POST.get('remarks', '')
         target = get_object_or_404(User, user_id=user_id)
-        admin = get_object_or_404(Admin, user=user)
+        admin = get_object_or_404(Admin, user=current_user(request))
 
+        if action not in {'approve', 'reject'}:
+            messages.error(request, 'Invalid verification action.')
+            return redirect('admin_dashboard')
         status = 'Approved' if action == 'approve' else 'Rejected'
         from accounts.models import VerificationLog
         VerificationLog.objects.create(
@@ -374,3 +389,48 @@ def get_cities(request):
     state_name = request.GET.get('state', '')
     cities = CityMaster.objects.filter(state__state_name__iexact=state_name).values('city_id', 'city_name')
     return JsonResponse({'cities': list(cities)})
+
+
+
+@login_required
+@role_required('admin')
+def user_management(request):
+    users = User.objects.select_related('role').order_by('-user_id')
+    return render(request, 'accounts/user_management.html', {'users': users})
+
+
+@login_required
+@role_required('admin')
+def verification_history(request):
+    from accounts.models import VerificationLog
+    logs = VerificationLog.objects.select_related('user', 'admin__user').order_by('-verified_at')
+    return render(request, 'accounts/verification_history.html', {'logs': logs})
+
+
+@login_required
+@role_required('clinic', 'clinic staff')
+def clinic_appointments(request):
+    user = current_user(request)
+    clinic = Clinic.objects.filter(user=user).first() or get_object_or_404(ClinicStaff, user=user).clinic
+    appointments = Appointment.objects.filter(clinic=clinic).select_related('patient__user', 'doctor').order_by('-appointment_date', '-appointment_time')
+    return render(request, 'accounts/clinic_appointments.html', {'clinic': clinic, 'appointments': appointments})
+
+
+
+@login_required
+@role_required('clinic')
+def clinic_profile(request):
+    clinic = Clinic.objects.filter(user=current_user(request)).first()
+    if not clinic:
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        messages.warning(request, 'Please complete your clinic profile.')
+        return redirect('register_clinic')
+    if request.method == 'POST':
+        clinic.clinic_name = request.POST.get('clinic_name', clinic.clinic_name).strip()
+        clinic.address = request.POST.get('address', clinic.address).strip()
+        clinic.contact_number = request.POST.get('contact_number', clinic.contact_number).strip()
+        clinic.save(update_fields=['clinic_name', 'address', 'contact_number', 'updated_at'])
+        messages.success(request, 'Clinic profile updated.')
+        return redirect('clinic_profile')
+    return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})

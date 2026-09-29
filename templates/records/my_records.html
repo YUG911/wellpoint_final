@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static clinic_extras %}
 {% block title %}My Records | WellPoint{% endblock %}
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
@@ -22,7 +22,7 @@
             <tbody>
                 {% for record in records %}
                 <tr style="border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:12px;">Dr. {{ record.doctor.doctor_name }}</td>
+                    <td style="padding:12px;">{{ record.doctor.doctor_name|doctor_display }}</td>
                     <td style="padding:12px;">{{ record.appointment.appointment_date }} {{ record.appointment.appointment_time|time:"H:i" }}</td>
                     <td style="padding:12px;">{{ record.diagnosis|default:'N/A' }}</td>
                     <td style="padding:12px;">{{ record.notes|default:'N/A' }}</td>

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static clinic_extras %}
 {% block title %}Profile | WellPoint{% endblock %}
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
         <h2>Doctor Profile</h2>
-        <p>Welcome, Dr. {{ doctor.doctor_name }}!</p>
+        <p>Welcome, {{ doctor.doctor_name|doctor_display }}!</p>
     </div>
 
     <div class="doctor-profile-card" style="padding:30px;">
@@ -20,7 +20,7 @@
             </div>
             <div class="doctor-profile-meta">
                 <span><i class="fa-solid fa-briefcase-medical"></i> {{ doctor.experience }} Years</span>
-                <span><i class="fa-solid fa-indian-rupee"></i> New: &#8376;{{ doctor.new_patient_fee }} | Old: &#8376;{{ doctor.old_patient_fee }}</span>
+                <span><i class="fa-solid fa-indian-rupee"></i> New: &#8377;{{ doctor.new_patient_fee }} | Old: &#8377;{{ doctor.old_patient_fee }}</span>
                 {% for clinic in clinics %}
                 <span><i class="fa-solid fa-hospital"></i> {{ clinic.clinic.clinic_name }}</span>
                 {% endfor %}

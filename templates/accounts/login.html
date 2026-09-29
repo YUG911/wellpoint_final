@@ -39,8 +39,8 @@
                         {{ form.password.errors }}
                     </div>
                     <button type="submit" class="login-button"><span>Log In</span><i class="fa-solid fa-arrow-right"></i></button>
-                    <div class="divider"><span></span><p>OR</p><span></span></div>
-                    <button type="button" class="google-button"><i class="fa-brands fa-google"></i> Continue with Google</button>
+                
+                   
                 </form>
                 <p class="signup-text">Don't have an account? <a href="{% url 'register' %}">Create an account</a></p>
             </div>
@@ -62,5 +62,16 @@
         </div>
     </section>
 </div>
+<script>
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("id_password");
 
+    togglePassword.addEventListener("click", function () {
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+        } else {
+            passwordInput.type = "password";
+        }
+    });
+</script>
 {% endblock %}

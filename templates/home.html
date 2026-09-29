@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load clinic_extras %}
 {% load static %}
 {% block title %}WellPoint | Healthcare Made Simple{% endblock %}
 {% block content %}
@@ -91,7 +92,7 @@
             {% for doctor in doctors %}
             <article class="doctor-card">
                 <div class="doctor-image">
-                    <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
+                    <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
                 </div>
                 <div class="doctor-info">
                     <h3>{{ doctor.doctor_name }}</h3>

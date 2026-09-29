@@ -5,7 +5,7 @@
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
         <h2>Appointments</h2>
-        <p>Dr. {{ doctor.doctor_name }}</p>
+        <p>{{ doctor.doctor_name }}</p>
     </div>
 
     <div class="section" style="padding:40px 0;">
@@ -38,7 +38,7 @@
                     <td style="padding:12px;">{{ appt.appointment_date }}</td>
                     <td style="padding:12px;">{{ appt.appointment_time|time:"H:i" }}</td>
                     <td style="padding:12px;">{{ appt.status }}</td>
-                    <td style="padding:12px;">
+                    <td style="padding:12px;"><a href="{% url 'doctor_appointment_detail' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Details</a>
                         {% if appt.status == 'Pending' %}
                         <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;background:#dcfce7;color:#16a34a;">Complete</a>
                         {% else %}

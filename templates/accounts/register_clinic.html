@@ -81,14 +81,14 @@ const citySelect = document.getElementById('id_city');
 // Populate cities when state changes
 stateSelect.addEventListener('change', function() {
     const stateName = this.options[this.selectedIndex].text;
-    fetch(`/accounts/get-cities/?state=${encodeURIComponent(stateName)}`)
+    fetch(`{% url 'get_cities' %}?state=${encodeURIComponent(stateName)}`)
         .then(r => r.json())
         .then(data => {
-            citySelect.innerHTML = '';
+            citySelect.innerHTML = '<option value="">Select city</option>';
             data.cities.forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
+                opt.value = c.city_id;
+                opt.textContent = c.city_name;
                 citySelect.appendChild(opt);
             });
         });

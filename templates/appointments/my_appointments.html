@@ -24,14 +24,14 @@
             <tbody>
                 {% for appt in appointments %}
                 <tr style="border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:12px;">Dr. {{ appt.doctor.doctor_name }}</td>
+                    <td style="padding:12px;">{{ appt.doctor.doctor_name }}</td>
                     <td style="padding:12px;">{{ appt.clinic.clinic_name }}</td>
                     <td style="padding:12px;">{{ appt.appointment_date }}</td>
                     <td style="padding:12px;">{{ appt.appointment_time|time:"H:i" }}</td>
-                    <td style="padding:12px;">{{ appt.status }}</td>
+                    <td style="padding:12px;">{{ appt.status }}{% if appt.payment %}<small> · Payment: {{ appt.payment.payment_status }}</small>{% endif %}</td>
                     <td style="padding:12px;">
                         {% if appt.status == 'Pending' or appt.status == 'Confirmed' %}
-                        <a href="{% url 'reschedule_appointment' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Reschedule</a>
+                        <a href="{% url 'reschedule_appointment' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Reschedule</a><a href="{% url 'payment_page' appt.appointment_id %}" class="view-profile">Payment</a><form method="post" action="{% url 'cancel_appointment' appt.appointment_id %}" style="display:inline;">{% csrf_token %}<button type="submit" class="view-profile" style="margin-left:8px;cursor:pointer;">Cancel</button></form>
                         {% endif %}
                         {% if appt.status == 'Completed' %}
                         {% if appt.review %}

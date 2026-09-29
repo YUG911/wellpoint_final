@@ -51,12 +51,11 @@ def upload_prescription(request, appointment_id):
     if request.method == 'POST':
         file_path = request.FILES.get('file')
         if file_path:
+            from django.core.files.storage import default_storage
+            saved_path = default_storage.save(f'prescriptions/{file_path.name}', file_path)
             Prescription.objects.update_or_create(
-                appointment=appointment, defaults={'uploaded_by': user, 'file_path': file_path.name}
+                appointment=appointment, defaults={'uploaded_by': user, 'file_path': saved_path}
             )
-            if file_path:
-                from django.core.files.storage import default_storage
-                default_storage.save(f'prescriptions/{file_path.name}', file_path)
             messages.success(request, "Prescription uploaded.")
             return redirect('doctor_appointments')
         messages.error(request, "No file selected.")
@@ -96,7 +95,9 @@ def my_reports(request):
 @role_required('clinic staff')
 def upload_report(request, appointment_id):
     user = current_user(request)
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+    appointment = get_object_or_404(
+        Appointment, appointment_id=appointment_id, clinic__clinicstaff__user=user
+    )
     if request.method == 'POST':
         report_name = request.POST.get('report_name', '')
         file_path = request.FILES.get('file')

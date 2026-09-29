@@ -20,5 +20,9 @@ urlpatterns = [
     path("dashboard/admin/", views.admin_dashboard, name="admin_dashboard"),
 
     path("verify-user/", views.verify_user, name="verify_user"),
+    path("admin/users/", views.user_management, name="user_management"),
+    path("admin/verification-history/", views.verification_history, name="verification_history"),
+    path("clinic/appointments/", views.clinic_appointments, name="clinic_appointments"),
+    path("clinic/profile/", views.clinic_profile, name="clinic_profile"),
     path("get-cities/", views.get_cities, name="get_cities"),
 ]

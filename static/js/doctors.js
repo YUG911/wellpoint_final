@@ -16,6 +16,7 @@ const doctorCards =
 
 const specializationFilters =
     document.querySelectorAll(".specialization-filter");
+const locationFilters = document.querySelectorAll(".location-filter");
 
 const availabilityFilters =
     document.querySelectorAll(".availability-filter");
@@ -33,8 +34,7 @@ const feeFilters =
 const doctorCount =
     document.getElementById("doctorCount");
 
-const noResults =
-    document.getElementById("noResults");
+const noResults = document.querySelector(".no-results");
 
 const clearFilters =
     document.getElementById("clearFilters");
@@ -73,7 +73,8 @@ function filterDoctors() {
     const selectedSpecializations =
         Array.from(specializationFilters)
             .filter(filter => filter.checked)
-            .map(filter => filter.value);
+            .map(filter => filter.value.toLowerCase());
+    const selectedLocations = Array.from(locationFilters).filter(filter => filter.checked).map(filter => filter.value.toLowerCase());
 
 
     // Selected availability
@@ -94,10 +95,8 @@ function filterDoctors() {
 
     // Selected fee
 
-    const selectedFee =
-        document.querySelector(
-            'input[name="fee"]:checked'
-        ).value;
+    const selectedFeeInput = document.querySelector('input[name="fee"]:checked');
+    const selectedFee = selectedFeeInput ? selectedFeeInput.value : 'all';
 
 
     let visibleDoctors = 0;
@@ -120,8 +119,7 @@ function filterDoctors() {
         const fee =
             Number(card.dataset.fee);
 
-        const availability =
-            card.dataset.availability.split(" ");
+        const availability = (card.dataset.availability || "").split(" ");
 
 
         // SEARCH MATCH
@@ -143,9 +141,8 @@ function filterDoctors() {
 
         const matchesSpecialization =
             selectedSpecializations.length === 0 ||
-            selectedSpecializations.includes(
-                specialization
-            );
+            selectedSpecializations.some(value => specialization.toLowerCase().includes(value));
+        const matchesSelectedLocation = selectedLocations.length === 0 || selectedLocations.some(value => location.includes(value));
 
 
         // EXPERIENCE MATCH
@@ -220,6 +217,7 @@ function filterDoctors() {
         if (
             matchesSearch &&
             matchesLocation &&
+            matchesSelectedLocation &&
             matchesSpecialization &&
             matchesExperience &&
             matchesFee &&
@@ -251,15 +249,13 @@ function filterDoctors() {
 
     if (visibleDoctors === 0) {
 
-        noResults.style.display =
-            "block";
+        if (noResults) noResults.style.display = "block";
 
     }
 
     else {
 
-        noResults.style.display =
-            "none";
+        if (noResults) noResults.style.display = "none";
 
     }
 
@@ -270,7 +266,7 @@ function filterDoctors() {
 // SEARCH BUTTON
 // =========================
 
-searchButton.addEventListener(
+if (searchButton) searchButton.addEventListener(
     "click",
     filterDoctors
 );
@@ -278,12 +274,12 @@ searchButton.addEventListener(
 
 // Live search
 
-searchInput.addEventListener(
+if (searchInput) searchInput.addEventListener(
     "input",
     filterDoctors
 );
 
-locationInput.addEventListener(
+if (locationInput) locationInput.addEventListener(
     "input",
     filterDoctors
 );
@@ -316,6 +312,8 @@ availabilityFilters.forEach(
     }
 );
 
+locationFilters.forEach(filter => filter.addEventListener("change", filterDoctors));
+
 
 experienceFilters.forEach(
     function (filter) {
@@ -345,12 +343,12 @@ feeFilters.forEach(
 // CLEAR FILTERS
 // =========================
 
-clearFilters.addEventListener(
+if (clearFilters) clearFilters.addEventListener(
     "click",
     resetAll
 );
 
-resetSearch.addEventListener(
+if (resetSearch) resetSearch.addEventListener(
     "click",
     resetAll
 );
@@ -387,14 +385,12 @@ function resetAll() {
 
     // Reset radio buttons
 
-    document.querySelector(
-        'input[name="experience"][value="all"]'
-    ).checked = true;
+    const defaultExperience = document.querySelector('input[name="experience"][value="all"]');
+    if (defaultExperience) defaultExperience.checked = true;
 
 
-    document.querySelector(
-        'input[name="fee"][value="all"]'
-    ).checked = true;
+    const defaultFee = document.querySelector('input[name="fee"][value="all"]');
+    if (defaultFee) defaultFee.checked = true;
 
 
     filterDoctors();
@@ -406,7 +402,7 @@ function resetAll() {
 // SORT DOCTORS
 // =========================
 
-sortDoctors.addEventListener(
+if (sortDoctors) sortDoctors.addEventListener(
     "change",
     function () {
 
@@ -483,7 +479,7 @@ sortDoctors.addEventListener(
 // MOBILE MENU
 // =========================
 
-mobileMenuBtn.addEventListener(
+if (mobileMenuBtn && mobileMenu) mobileMenuBtn.addEventListener(
     "click",
     function () {
 

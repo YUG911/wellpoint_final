@@ -86,22 +86,29 @@ def doctor_availability(request):
     user = current_user(request)
     doctor = get_object_or_404(Doctor, user=user)
     days = DayMaster.objects.all().order_by('day_id')
-    clinics = Clinic.objects.filter(doctor_clinic__doctor=doctor)
+    clinics = Clinic.objects.filter(doctorclinic__doctor=doctor)
 
     if request.method == 'POST':
-        DoctorAvailability.objects.filter(doctor=doctor).delete()
+        new_slots = []
         for day in days:
             day_id = day.day_id
             start = request.POST.get(f'start_{day_id}')
             end = request.POST.get(f'end_{day_id}')
             clinic_ids = request.POST.getlist(f'clinics_{day_id}')
             if start and end and clinic_ids:
+                if start >= end:
+                    messages.error(request, f'{day.day_name}: end time must be after start time.')
+                    return redirect('doctor_availability')
                 for clinic_id in clinic_ids:
-                    clinic = get_object_or_404(Clinic, clinic_id=clinic_id)
-                    DoctorAvailability.objects.create(
-                        doctor=doctor, clinic=clinic, day=day,
-                        start_time=start, end_time=end
+                    clinic = get_object_or_404(
+                        Clinic, clinic_id=clinic_id, doctorclinic__doctor=doctor
                     )
+                    new_slots.append((clinic, day, start, end))
+        for clinic, day, start, end in new_slots:
+            DoctorAvailability.objects.get_or_create(
+                doctor=doctor, clinic=clinic, day=day,
+                start_time=start, end_time=end,
+            )
         messages.success(request, "Availability updated successfully.")
         return redirect('doctor_availability')
 
@@ -120,9 +127,12 @@ def doctor_appointments(request):
     user = current_user(request)
     doctor = get_object_or_404(Doctor, user=user)
     status_filter = request.GET.get('status', '')
+    patient_id = request.GET.get('patient', '')
     appointments = Appointment.objects.filter(doctor=doctor).order_by('-appointment_date')
     if status_filter:
         appointments = appointments.filter(status=status_filter)
+    if patient_id:
+        appointments = appointments.filter(patient__patient_id=patient_id)
     return render(request, 'doctors/doctor_appointments.html', {
         'doctor': doctor,
         'appointments': appointments,
@@ -141,3 +151,12 @@ def doctor_patients(request):
         'doctor': doctor,
         'patients': patients,
     })
+
+
+
+@login_required
+@role_required('doctor')
+def doctor_appointment_detail(request, appointment_id):
+    doctor = get_object_or_404(Doctor, user=current_user(request))
+    appointment = get_object_or_404(Appointment.objects.select_related('patient__user', 'clinic'), appointment_id=appointment_id, doctor=doctor)
+    return render(request, 'doctors/doctor_appointment_detail.html', {'doctor': doctor, 'appointment': appointment})

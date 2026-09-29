@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static clinic_extras %}
 {% block title %}Write Review | WellPoint{% endblock %}
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
         <h2>Write a Review</h2>
-        <p>For your appointment with Dr. {{ doctor.doctor_name }} on {{ appointment.appointment_date }}</p>
+        <p>For your appointment with {{ doctor.doctor_name|doctor_display }} on {{ appointment.appointment_date }}</p>
     </div>
 
     <form method="post" class="doctor-profile-card" style="padding:30px;">

@@ -10,8 +10,8 @@
 
     <div class="doctor-profile-card" style="padding:30px;">
         <div style="display:flex;gap:30px;align-items:center;">
-            <div class="doctor-profile-image">
-                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf3c7069" alt="Profile">
+            <div class="doctor-profile-image" aria-hidden="true" style="display:flex;align-items:center;justify-content:center;background:#dbeafe;color:#2563eb;font-size:42px;">
+                <i class="fa-solid fa-user"></i>
             </div>
             <div class="doctor-profile-info">
                 <h1>{{ user.full_name }}</h1>
@@ -28,6 +28,12 @@
                 </span></p>
             </div>
         </div>
+        <form method="post" style="margin-top:28px;max-width:620px;">{% csrf_token %}
+            <div class="form-group"><label for="id_full_name">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
+            <div class="form-group"><label for="id_phone">Phone</label>{{ form.phone }}{{ form.phone.errors }}</div>
+            <div class="form-group"><label for="id_address">Address</label>{{ form.address }}{{ form.address.errors }}</div>
+            <button class="btn btn-primary" type="submit">Save Profile</button>
+        </form>
     </div>
 </div>
 {% endblock %}

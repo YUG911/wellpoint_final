@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% load static %}
+{% load clinic_extras %}
+{% load static clinic_extras %}
 {% block css %}<link rel="stylesheet" href="{% static 'css/doctor-detail.css' %}">{{ form.media }}{% endblock %}
 {% block title %}{{ doctor.doctor_name }} | WellPoint{% endblock %}
 {% block content %}
@@ -14,13 +15,13 @@
     <div class="page-container">
         <section class="doctor-profile-card">
             <div class="doctor-profile-image">
-                <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
+                <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
             </div>
             <div class="doctor-profile-info">
                 <div class="doctor-profile-top">
                     <div>
                         <p class="profile-label">HEALTHCARE PROFESSIONAL</p>
-                        <h1 id="doctorName">{{ doctor.doctor_name }}</h1>
+                        <h1 id="doctorName">{{ doctor.doctor_name|doctor_display }}</h1>
                         <p class="doctor-specialization" id="doctorSpecialization">
                             {% for ds in specializations %}{{ ds.specialization_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         </p>
@@ -106,7 +107,7 @@
                     </div>
                     <div class="consultation-fee">
                         <span>Consultation Fee</span>
-                        <strong>&#8376;{{ doctor.new_patient_fee }}</strong>
+                        <strong>&#8377;{{ doctor.new_patient_fee }}</strong>
                     </div>
                     {% if current_user %}
                     <a href="{% url 'book_appointment' doctor.doctor_id %}" class="book-now-btn">

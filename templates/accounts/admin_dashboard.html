@@ -55,15 +55,8 @@
                     <td style="padding:12px;">{{ u.email }}</td>
                     <td style="padding:12px;">{{ u.role.role_name }}</td>
                     <td style="padding:12px;">
-                        <form method="post" action="{% url 'verify_user' %}" style="display:flex;gap:10px;">
-                            {% csrf_token %}
-                            <input type="hidden" name="user_id" value="{{ u.user_id }}">
-                            <input type="hidden" name="action" value="approve">
-                            <button type="submit" class="view-profile" style="background:#dcfce7;color:#16a34a;">Approve</button>
-                            <input type="hidden" name="user_id" value="{{ u.user_id }}">
-                            <input type="hidden" name="action" value="reject">
-                            <button type="submit" class="view-profile" style="background:#fee2e2;color:#991b2b;">Reject</button>
-                        </form>
+                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="approve"><button type="submit" class="view-profile" style="background:#dcfce7;color:#16a34a;">Approve</button></form>
+                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="reject"><button type="submit" class="view-profile" style="background:#fee2e2;color:#991b2b;">Reject</button></form>
                     </td>
                 </tr>
                 {% endfor %}

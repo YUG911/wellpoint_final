@@ -1,10 +1,12 @@
 const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const navigation = document.querySelector(".nav-links");
 
-mobileMenuBtn.addEventListener("click", function () {
-
-    alert("Mobile menu will be added in the next update.");
-
-});
+if (mobileMenuBtn && navigation) {
+    mobileMenuBtn.addEventListener("click", function () {
+        navigation.classList.toggle("mobile-open");
+        mobileMenuBtn.setAttribute("aria-expanded", navigation.classList.contains("mobile-open"));
+    });
+}
 // ==========================================
 // HOMEPAGE DOCTOR SEARCH
 // ==========================================

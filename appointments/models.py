@@ -11,9 +11,9 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
     symptoms = models.TextField(null=True, blank=True)
-    status = models.CharField(max_length=50)
-    patient_type = models.CharField(max_length=20)
-    fee_charged = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=20, default='Pending')
+    patient_type = models.CharField(max_length=10)
+    fee_charged = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         db_table = 'appointments'
@@ -26,8 +26,8 @@ class Payment(models.Model):
     payment_id = models.AutoField(primary_key=True)
     appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE, db_column='appointment_id')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=50)
-    payment_status = models.CharField(max_length=20)
+    payment_method = models.CharField(max_length=20)
+    payment_status = models.CharField(max_length=20, default='Pending')
     paid_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

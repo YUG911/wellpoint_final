@@ -13,23 +13,16 @@ class LoginForm(forms.Form):
 
 
 class RegisterForm(forms.Form):
-    ROLE_CHOICES = [
-        (3, 'Clinic'),
-        (1, 'Patient'),
-        (2, 'Doctor'),
-        (4, 'Clinic Staff'),
-    ]
 
     full_name = forms.CharField(
-        max_length=255,
+        max_length=100,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Full Name'})
     )
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email address'})
     )
-    phone = forms.CharField(
-        max_length=20,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your phone number'})
+    phone = forms.IntegerField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your phone number'})
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a strong password'})
@@ -37,8 +30,9 @@ class RegisterForm(forms.Form):
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm your password'})
     )
-    role = forms.ChoiceField(
-        choices=ROLE_CHOICES,
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.exclude(role_name__iexact='Admin').order_by('role_name'),
+        empty_label='Select your role',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     address = forms.CharField(
@@ -46,6 +40,7 @@ class RegisterForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter your address'})
     )
+    terms_accepted = forms.BooleanField(required=True, error_messages={'required': 'You must accept the Terms of Service and Privacy Policy.'})
 
     def clean(self):
         cleaned = super().clean()
@@ -70,15 +65,25 @@ class PatientProfileForm(forms.Form):
     date_of_birth = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
     gender = forms.ChoiceField(choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')],
                                widget=forms.RadioSelect)
-    blood_group = forms.ChoiceField(choices=[
-        ('A+', 'A+'), ('A-', 'A-'), ('B+', 'B+'), ('B-', 'B-'),
-        ('AB+', 'AB+'), ('AB-', 'AB-'), ('O+', 'O+'), ('O-', 'O-')
-    ], widget=forms.Select(attrs={'class': 'form-control'}))
-    emergency_contact = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    blood_group = forms.ChoiceField(
+    choices=[
+        ('A+', 'A+'),
+        ('A-', 'A-'),
+        ('B+', 'B+'),
+        ('B-', 'B-'),
+        ('AB+', 'AB+'),
+        ('AB-', 'AB-'),
+        ('O+', 'O+'),
+        ('O-', 'O-'),
+        ('Unknown', "Don't Know")
+    ],
+    widget=forms.Select(attrs={'class': 'form-control'})
+)
+    emergency_contact = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
 
 
 class DoctorProfileForm(forms.Form):
-    doctor_name = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    doctor_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
     experience = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     new_patient_fee = forms.DecimalField(max_digits=10, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     old_patient_fee = forms.DecimalField(max_digits=10, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
@@ -94,13 +99,19 @@ class DoctorProfileForm(forms.Form):
 
 
 class ClinicForm(forms.Form):
-    clinic_name = forms.CharField(max_length=255, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    clinic_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
     address = forms.CharField(max_length=500, widget=forms.TextInput(attrs={'class': 'form-control'}))
     state = forms.ModelChoiceField(queryset=StateMaster.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}))
     city = forms.ModelChoiceField(queryset=CityMaster.objects.none(), widget=forms.Select(attrs={'class': 'form-control'}))
-    contact_number = forms.CharField(max_length=20, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    latitude = forms.DecimalField(max_digits=9, decimal_places=6, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    longitude = forms.DecimalField(max_digits=9, decimal_places=6, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    contact_number = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    latitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    longitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        state_id = self.data.get('state') or self.initial.get('state')
+        if state_id:
+            self.fields['city'].queryset = CityMaster.objects.filter(state_id=state_id).order_by('city_name')
 
 
 class ClinicHoursForm(forms.Form):
@@ -114,3 +125,14 @@ class AdminForm(forms.Form):
         ('super', 'Super Admin'),
         ('manager', 'Manager')
     ], widget=forms.Select(attrs={'class': 'form-control'}))
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('full_name', 'phone', 'address')
+        widgets = {
+            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

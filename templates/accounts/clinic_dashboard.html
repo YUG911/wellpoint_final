@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
-        <h2>Clinic Dashboard</h2>
+        <h2>Clinic Dashboard</h2><a href="{% url 'clinic_profile' %}" class="btn btn-outline">Manage Profile</a>
         <p>Welcome, {{ clinic.clinic_name }}!</p>
     </div>
 
@@ -27,7 +27,7 @@
     </div>
 
     <div class="section" style="padding:40px 0;">
-        <h3>Associated Doctors</h3>
+        <h3>Associated Doctors</h3><p><a href="{% url 'clinic_appointments' %}" class="text-link">Manage Appointments</a></p>
         {% if doctors %}
         <div class="doctors-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
             {% for doctor in doctors %}
@@ -35,7 +35,7 @@
                 <div class="doctor-info" style="padding:20px;">
                     <h3>{{ doctor.doctor_name }}</h3>
                     <p class="specialization">
-                        {% for s in doctor.doctor_specialization.first %}{{ s.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        {% for s in doctor.doctor_specialization.all %}{{ s.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}{% empty %}No specialization listed{% endfor %}
                     </p>
                     <p class="clinic"><i class="fa-solid fa-indian-rupee"></i> New: ₹{{ doctor.new_patient_fee }} | Old: ₹{{ doctor.old_patient_fee }}</p>
                 </div>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% load static %}
+{% load clinic_extras %}
+{% load static clinic_extras %}
 {% block css %}<link rel="stylesheet" href="{% static 'css/doctors.css' %}">{{ form.media }}{% endblock %}
 {% block title %}Find Doctors | WellPoint{% endblock %}
 {% block content %}
@@ -20,6 +21,13 @@
             <div class="location-input">
                 <i class="fa-solid fa-location-dot"></i>
                 <input type="text" id="locationInput" name="location" placeholder="Enter location" value="{{ request.GET.location|default:'' }}">
+            </div>
+            <div class="location-input">
+                <i class="fa-solid fa-stethoscope"></i>
+                <select name="specialization" aria-label="Specialization" style="width:100%;border:0;outline:0;background:transparent;">
+                    <option value="">All specializations</option>
+                    {% for s in specializations %}<option value="{{ s.specialization_name }}" {% if request.GET.specialization == s.specialization_name %}selected{% endif %}>{{ s.specialization_name }}</option>{% endfor %}
+                </select>
             </div>
             <button type="submit" class="search-button" id="searchButton">
                 <i class="fa-solid fa-magnifying-glass"></i><span>Search</span>
@@ -74,14 +82,16 @@
                 <article class="doctor-card"
                     data-name="{{ doctor.doctor_name|lower }}"
                     data-experience="{{ doctor.experience|default:0 }}"
-                    data-fee="{{ doctor.new_patient_fee }}">
+                    data-fee="{{ doctor.new_patient_fee }}"
+                    data-specialization="{% for ds in doctor.doctor_specialization.all %}{{ ds.specialization.specialization_name|lower }} {% endfor %}"
+                    data-location="{% for dc in doctor.doctor_clinic.all %}{{ dc.clinic.city.city_name|lower }} {% endfor %}">
                     <div class="doctor-image">
-                        <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
+                        <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
                     </div>
                     <div class="doctor-info">
                         <div class="doctor-top">
                             <div>
-                                <h3>{{ doctor.doctor_name }}</h3>
+                                <h3>{{ doctor.doctor_name|doctor_display }}</h3>
                                 <p class="specialization">
                                     {% for ds in doctor.doctor_specialization.all %}
                                     {{ ds.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}
@@ -97,7 +107,7 @@
                             {% endif %}
                         </div>
                         <div class="doctor-bottom">
-                            <div class="fee"><span>Consultation Fee</span><strong>&#8376;{{ doctor.new_patient_fee }}</strong></div>
+                            <div class="fee"><span>Consultation Fee</span><strong>&#8377;{{ doctor.new_patient_fee }}</strong></div>
                             <div class="doctor-actions">
                                 <a href="{% url 'doctor_detail' doctor.doctor_id %}" class="view-profile">View Profile</a>
                                 {% if current_user %}

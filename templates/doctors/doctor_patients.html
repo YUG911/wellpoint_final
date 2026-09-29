@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static clinic_extras %}
 {% block title %}Patients | WellPoint{% endblock %}
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
         <h2>My Patients</h2>
-        <p>Dr. {{ doctor.doctor_name }}</p>
+        <p>{{ doctor.doctor_name|doctor_display }}</p>
     </div>
 
     <div class="section" style="padding:40px 0;">
@@ -22,7 +22,7 @@
                     <p class="doctor-location"><i class="fa-solid fa-phone"></i> {{ patient.emergency_contact|default:'N/A' }}</p>
                     <div class="doctor-bottom">
                         <div class="doctor-actions">
-                            <a href="{% url 'my_appointments' %}" class="view-profile">View History</a>
+                            <a href="{% url 'doctor_appointments' %}?patient={{ patient.patient_id }}" class="view-profile">View History</a>
                         </div>
                     </div>
                 </div>
