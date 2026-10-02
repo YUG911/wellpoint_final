@@ -1,0 +1,494 @@
+Clinic Appointment Booking System — Data Dictionary (Final)
+Normalized to 3NF. Includes table purposes, NULL constraints, keys, master/lookup tables, and relationship cardinality.
+ROLES 2 fields
+Master list of user roles in the system.
+Field Type Null Key Notes
+role_id INT NOT 
+NULL
+PK 1 = Patient, 2 = Doctor, 3 = Clinic, 4 = Clinic 
+Staff, 5 = Admin
+role_name VARCHAR(2
+0)
+NOT 
+NULL
+e.g. Patient, Doctor, Clinic, Staff, Admin
+USERS 9 fields
+Core login/account table shared by every person in the system (patient, doctor, clinic owner, staff, admin).
+Field Type Null Key Notes
+user_id INT NOT 
+NULL
+PK
+full_name VARCHAR(1
+00)
+NOT 
+NULL
+email VARCHAR(1
+00)
+NOT 
+NULL
+UNIQUE
+phone INT NOT 
+NULL
+UNIQUE kept as-is per guide's review
+password_hash VARCHAR(2
+55)
+NOT 
+NULL
+address TEXT NULL personal address; optional
+role_id INT NOT 
+NULL
+FK → ROLES replaces free-text role column
+is_verified BOOLEAN NOT 
+NULL
+default FALSE; quick-lookup flag, full history in 
+VERIFICATION_LOG
+account_status VARCHAR(2
+0)
+NOT 
+NULL
+default 'Active'; Active / Inactive / Suspended
+STATE_MASTER 2 fields
+Master list of states/provinces, used to support location-based search and filtering.
+Field Type Null Key Notes
+state_id INT NOT 
+NULL
+PK
+state_name VARCHAR(1
+00)
+NOT 
+NULL
+CITY_MASTER 3 fields
+Master list of cities, linked to their state, so clinics/doctors can be searched or filtered by location.
+Field Type Null Key Notes
+city_id INT NOT 
+NULL
+PK\nCITY_MASTER 3 fields
+state_id INT NOT 
+NULL
+FK → 
+STATE_MASTE
+R
+city_name VARCHAR(1
+00)
+NOT 
+NULL
+CLINICS 9 fields
+One row per registered clinic/hospital branch.
+Field Type Null Key Notes
+clinic_id INT NOT 
+NULL
+PK
+user_id INT NOT 
+NULL
+FK + UNIQUE
+clinic_name VARCHAR(1
+00)
+NOT 
+NULL
+address TEXT NOT 
+NULL
+street-level address only; city/state now separated 
+out
+city_id INT NOT 
+NULL
+FK → 
+CITY_MASTER
+enables search/filter by city
+contact_number INT NOT 
+NULL
+kept as-is per guide's review
+latitude DECIMAL(10
+,7)
+NULL
+longitude DECIMAL(10
+,7)
+NULL
+created_at / updated_at DATETIME NOT 
+NULL
+audit timestamps
+opening_time / closing_time removed from CLINICS — moved to CLINIC_HOURS to support per-day hours.
+CLINIC_HOURS 5 fields
+Per-day operating hours for each clinic.
+Field Type Null Key Notes
+hours_id INT NOT 
+NULL
+PK
+clinic_id INT NOT 
+NULL
+FK
+day_id INT NOT 
+NULL
+FK → 
+DAY_MASTER
+open_time TIME NULL null if closed that day
+close_time TIME NULL null if closed that day
+DAY_MASTER 2 fields
+Master list of weekdays, shared by CLINIC_HOURS and DOCTOR_AVAILABILITY to avoid duplicate/inconsistent day-
+name text in two places.
+Field Type Null Key Notes
+day_id INT NOT 
+NULL
+PK 1 = Sunday ... 7 = Saturday\nDAY_MASTER 2 fields
+day_name VARCHAR(1
+0)
+NOT 
+NULL
+DOCTORS 8 fields
+One row per doctor profile.
+Field Type Null Key Notes
+doctor_id INT NOT 
+NULL
+PK
+user_id INT NOT 
+NULL
+FK + UNIQUE
+doctor_name VARCHAR(1
+00)
+NOT 
+NULL
+experience INT NULL years
+new_patient_fee DECIMAL(10
+,2)
+NOT 
+NULL
+replaces single consultation_fee
+old_patient_fee DECIMAL(10
+,2)
+NOT 
+NULL
+follow-up fee
+about TEXT NULL
+created_at / updated_at DATETIME NOT 
+NULL
+audit timestamps
+specialization, qualification and clinic_id removed from DOCTORS — each is a many-to-many relationship via the junction tables below.
+SPECIALIZATION_MASTER 2 fields
+Controlled list of medical specializations.
+Field Type Null Key Notes
+specialization_id INT NOT 
+NULL
+PK
+specialization_name VARCHAR(1
+00)
+NOT 
+NULL
+e.g. Cardiology, Pediatrics, Dermatology
+DOCTOR_SPECIALIZATION 3 fields
+Junction table — one doctor can have many specializations, one specialization can belong to many doctors.
+Field Type Null Key Notes
+id INT NOT 
+NULL
+PK
+doctor_id INT NOT 
+NULL
+FK → 
+DOCTORS
+specialization_id INT NOT 
+NULL
+FK → 
+SPECIALIZATI
+ON_MASTER
+QUALIFICATION_MASTER 2 fields
+Controlled list of academic/medical qualifications (degrees), kept separate from specializations.
+Field Type Null Key Notes
+qualification_id INT NOT PK\nQUALIFICATION_MASTER 2 fields
+NULL
+qualification_name VARCHAR(1
+00)
+NOT 
+NULL
+e.g. MBBS, MD, MS — a degree, not a 
+specialization
+DOCTOR_QUALIFICATION 3 fields
+Junction table — one doctor can hold many qualifications.
+Field Type Null Key Notes
+id INT NOT 
+NULL
+PK
+doctor_id INT NOT 
+NULL
+FK → 
+DOCTORS
+qualification_id INT NOT 
+NULL
+FK → 
+QUALIFICATIO
+N_MASTER
+DOCTOR_CLINIC 3 fields
+Junction table — supports a doctor practicing at more than one clinic.
+Field Type Null Key Notes
+id INT NOT 
+NULL
+PK
+doctor_id INT NOT 
+NULL
+FK → 
+DOCTORS
+clinic_id INT NOT 
+NULL
+FK → CLINICS
+DOCTOR_AVAILABILITY 6 fields
+Weekly time slots when a doctor is available at a given clinic.
+Field Type Null Key Notes
+availability_id INT NOT 
+NULL
+PK
+doctor_id INT NOT 
+NULL
+FK
+clinic_id INT NOT 
+NULL
+FK which clinic this slot applies to
+day_id INT NOT 
+NULL
+FK → 
+DAY_MASTER
+start_time TIME NOT 
+NULL
+end_time TIME NOT 
+NULL
+PATIENTS 7 fields
+Patient-specific profile data, linked 1:1 to a USERS record.
+Field Type Null Key Notes\nPATIENTS 7 fields
+patient_id INT NOT 
+NULL
+PK
+user_id INT NOT 
+NULL
+FK + UNIQUE 1-to-1 link to USERS (login/shared data lives 
+there)
+date_of_birth DATE NOT 
+NULL
+gender VARCHAR(1
+0)
+NULL
+blood_group VARCHAR(5) NULL
+emergency_contact INT NULL kept as-is per guide's review
+created_at / updated_at DATETIME NOT 
+NULL
+audit timestamps
+APPOINTMENTS 10 fields
+One row per booked appointment between a patient and a doctor at a clinic.
+Field Type Null Key Notes
+appointment_id INT NOT 
+NULL
+PK
+patient_id INT NOT 
+NULL
+FK
+doctor_id INT NOT 
+NULL
+FK
+clinic_id INT NOT 
+NULL
+FK which clinic the visit is at
+appointment_date DATE NOT 
+NULL
+appointment_time TIME NOT 
+NULL
+symptoms TEXT NULL free text
+status VARCHAR(2
+0)
+NOT 
+NULL
+default 'Pending'; Pending · Confirmed · Rejected 
+· Completed · Cancelled
+patient_type VARCHAR(1
+0)
+NOT 
+NULL
+New / Old (follow-up) — determines which fee 
+applies
+fee_charged DECIMAL(10
+,2)
+NOT 
+NULL
+snapshot of the fee at time of booking, so later rate 
+changes don't alter past records
+PAYMENTS 6 fields
+Payment record for a completed or pending appointment.
+Field Type Null Key Notes
+payment_id INT NOT 
+NULL
+PK
+appointment_id INT NOT 
+NULL
+FK + UNIQUE
+amount DECIMAL(10
+,2)
+NOT 
+NULL
+payment_method VARCHAR(2
+0)
+NOT 
+NULL
+Cash / UPI / Card, etc.\nPAYMENTS 6 fields
+payment_status VARCHAR(2
+0)
+NOT 
+NULL
+default 'Pending'; Pending / Paid / Refunded
+paid_at DATETIME NULL null until paid
+PATIENT_RECORDS 6 fields
+Diagnosis/medical record generated from a completed appointment.
+Field Type Null Key Notes
+record_id INT NOT 
+NULL
+PK
+patient_id INT NOT 
+NULL
+FK
+doctor_id INT NOT 
+NULL
+FK
+appointment_id INT NOT 
+NULL
+FK + UNIQUE
+diagnosis TEXT NULL
+notes TEXT NULL
+PRESCRIPTIONS 5 fields
+Prescription file uploaded for a given appointment.
+Field Type Null Key Notes
+prescription_id INT NOT 
+NULL
+PK
+appointment_id INT NOT 
+NULL
+FK + UNIQUE
+uploaded_by INT NOT 
+NULL
+FK → USERS
+file_path VARCHAR(2
+55)
+NOT 
+NULL
+created_at DATETIME NOT 
+NULL
+REPORTS 6 fields
+Lab/diagnostic report file uploaded for a given appointment.
+Field Type Null Key Notes
+report_id INT NOT 
+NULL
+PK
+appointment_id INT NOT 
+NULL
+FK
+uploaded_by INT NOT 
+NULL
+FK → USERS clinic staff (receptionist)
+report_name VARCHAR(1
+00)
+NOT 
+NULL
+file_path VARCHAR(2
+55)
+NOT 
+NULL\nREPORTS 6 fields
+created_at DATETIME NOT 
+NULL
+REVIEWS 7 fields
+Patient review/rating left for a doctor after a completed appointment.
+Field Type Null Key Notes
+review_id INT NOT 
+NULL
+PK
+patient_id INT NOT 
+NULL
+FK
+doctor_id INT NOT 
+NULL
+FK
+appointment_id INT NOT 
+NULL
+FK + UNIQUE
+rating DECIMAL(2,
+1)
+NOT 
+NULL
+review_text TEXT NULL
+created_at DATETIME NOT 
+NULL
+CLINIC_STAFF 3 fields
+Receptionist/staff accounts linked to a clinic.
+Field Type Null Key Notes
+staff_id INT NOT 
+NULL
+PK
+user_id INT NOT 
+NULL
+FK + UNIQUE
+clinic_id INT NOT 
+NULL
+FK
+ADMIN 3 fields
+System administrator accounts.
+Field Type Null Key Notes
+admin_id INT NOT 
+NULL
+PK
+user_id INT NOT 
+NULL
+FK + UNIQUE
+access_level VARCHAR(2
+0)
+NOT 
+NULL
+e.g. Super Admin / Moderator
+VERIFICATION_LOG 6 fields
+Audit trail of admin approval/rejection actions on doctor, clinic, and staff accounts.
+Field Type Null Key Notes
+verification_id INT NOT PK\nVERIFICATION_LOG 6 fields
+NULL
+user_id INT NOT 
+NULL
+FK → USERS the doctor / clinic / staff being verified
+admin_id INT NOT 
+NULL
+FK → ADMIN who approved/rejected
+status VARCHAR(2
+0)
+NOT 
+NULL
+Pending / Approved / Rejected
+remarks TEXT NULL reason, e.g. rejection notes
+verified_at DATETIME NOT 
+NULL
+Relationship / Cardinality Summary
+Parent Table Child Table Cardinality Relationship
+ROLES USERS 1 : M one role applies to many users
+STATE_MASTER CITY_MASTER 1 : M one state has many cities
+CITY_MASTER CLINICS 1 : M one city has many clinics
+USERS PATIENTS / DOCTORS / 
+CLINICS / CLINIC_STAFF / 
+ADMIN
+1 : 1 subtype profile per role
+DOCTORS DOCTOR_SPECIALIZATIO
+N
+1 : M M:N with 
+SPECIALIZATION_MASTER via this 
+junction
+DOCTORS DOCTOR_QUALIFICATIO
+N
+1 : M M:N with 
+QUALIFICATION_MASTER via this 
+junction
+DOCTORS DOCTOR_CLINIC 1 : M M:N with CLINICS via this junction
+DOCTORS DOCTOR_AVAILABILITY 1 : M one doctor has many weekly slots
+CLINICS CLINIC_HOURS 1 : M one clinic has hours for each open day
+DAY_MASTER CLINIC_HOURS / 
+DOCTOR_AVAILABILITY
+1 : M shared weekday reference
+PATIENTS APPOINTMENTS 1 : M one patient can book many appointments
+DOCTORS APPOINTMENTS 1 : M one doctor has many appointments
+CLINICS APPOINTMENTS 1 : M one clinic hosts many appointments
+APPOINTMENTS PAYMENTS 1 : 1 one payment per appointment
+APPOINTMENTS PATIENT_RECORDS 1 : 1 one record per completed appointment
+APPOINTMENTS PRESCRIPTIONS 1 : 1 one prescription per appointment
+APPOINTMENTS REPORTS 1 : M an appointment can have multiple report 
+files
+APPOINTMENTS REVIEWS 1 : 1 one review per appointment
+ADMIN VERIFICATION_LOG 1 : M one admin can process many 
+verifications
+USERS VERIFICATION_LOG 1 : M one user can be reviewed more than 
+once (resubmission)
+PK = Primary Key   FK = Foreign Key   UNIQUE = one-to-one link   Red text = fields flagged by guide, intentionally kept as INT

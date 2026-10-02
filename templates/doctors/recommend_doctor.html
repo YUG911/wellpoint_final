@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+{% block css %}<link rel="stylesheet" href="{% static 'css/doctors.css' %}">{% endblock %}
+{% block title %}Find Recommended Doctor | WellPoint{% endblock %}
+{% block content %}
+
+<section class="search-hero">
+    <div class="hero-container">
+        <div class="hero-text">
+            <span class="section-label"><span></span> SMART RECOMMENDATION</span>
+            <h1>Not sure which doctor<span> to see?</span></h1>
+            <p>Describe your symptoms and the trained model will suggest the right specialization. Our doctors are then matched for you.</p>
+        </div>
+    </div>
+</section>
+
+<main class="doctors-page">
+    <div class="doctors-container" style="grid-template-columns: 1fr;">
+        <section class="doctors-section">
+            <form method="post" class="content-card" style="padding:24px;">
+                {% csrf_token %}
+                <div class="card-heading"><div class="heading-icon"><i class="fa-solid fa-stethoscope"></i></div><h2>Enter your symptoms</h2></div>
+                <label for="symptoms" style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;">Symptoms</label>
+                <input type="text" id="symptoms" name="symptoms" class="form-control" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;"
+                       placeholder="e.g. fever, cough, breathing difficulty"
+                       value="{{ symptoms|default:'' }}" required>
+                <p style="font-size:12px;color:#64748b;margin:8px 0 14px;">Separate symptoms with commas. Our model predicts a specialization only — a doctor is then chosen from the clinic database.</p>
+                <button type="submit" class="book-now-btn" style="display:inline-block;padding:12px 24px;">Find Recommended Doctor</button>
+                {% if not model_ready %}
+                <p style="color:#b91c1c;font-size:13px;margin-top:12px;">The recommendation model has not been trained yet. Run <code>python ml/train_model.py</code>.</p>
+                {% endif %}
+            </form>
+
+            {% if predicted_specialization %}
+            <div class="content-card" style="padding:24px;margin-top:20px;">
+                <div class="card-heading"><div class="heading-icon"><i class="fa-solid fa-brain"></i></div><h2>Predicted Specialization</h2></div>
+                <p style="font-size:18px;font-weight:700;color:#2563eb;">{{ predicted_specialization }}</p>
+                {% if specialization %}
+                <p style="font-size:13px;color:#64748b;">Matched to clinic specialization: {{ specialization.specialization_name }}</p>
+                {% endif %}
+                <p style="font-size:12px;color:#94a3b8;">Inference time: {{ inference_time }} seconds</p>
+
+                {% if no_specialization %}
+                <p style="color:#b45309;margin-top:14px;">No doctor in the database is registered under this specialization yet. Please browse <a href="{% url 'doctor_list' %}">all doctors</a>.</p>
+                {% endif %}
+
+                {% if recommendations %}
+                <p style="font-size:12px;color:#64748b;margin-top:14px;">Recommended doctors are ranked using existing clinic data only: current availability slots, clinic association and average review rating.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if recommendations %}
+            <h3 style="margin:26px 0 12px;">Recommended Doctors</h3>
+            <div class="doctors-list">
+                {% for row in recommendations %}
+                <article class="doctor-card">
+                    <div class="doctor-image">
+                        <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ row.doctor.doctor_name }}">
+                    </div>
+                    <div class="doctor-info">
+                        <div class="doctor-top">
+                            <div>
+                                <h3>{{ row.doctor.doctor_name }}</h3>
+                                <p class="specialization">
+                                    {% for ds in row.doctor.doctor_specialization.all %}{{ ds.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </p>
+                            </div>
+                            <span class="available-badge"><span></span> {% if row.is_available %}Available{% else %}No slots{% endif %}</span>
+                        </div>
+                        <div class="doctor-details">
+                            <span><i class="fa-solid fa-briefcase-medical"></i> {{ row.doctor.experience|default:'0' }} Years Experience</span>
+                            <span><i class="fa-solid fa-clock"></i> {{ row.availability_slots }} Availability Slots</span>
+                            <span><i class="fa-solid fa-hospital"></i> {{ row.clinic_count }} Clinic Association{{ row.clinic_count|pluralize }}</span>
+                            {% if row.rating %}
+                            <span><i class="fa-solid fa-star"></i> {{ row.rating }} Rating</span>
+                            {% endif %}
+                        </div>
+                        <div class="doctor-bottom">
+                            <div class="fee"><span>Consultation Fee</span><strong>&#8376;{{ row.doctor.new_patient_fee }}</strong></div>
+                            <div class="doctor-actions">
+                                <a href="{% url 'doctor_detail' row.doctor.doctor_id %}" class="view-profile">View Profile</a>
+                                <a href="{% url 'book_appointment' row.doctor.doctor_id %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% elif predicted_specialization and not no_specialization %}
+            <p style="color:#64748b;margin-top:20px;">No doctor is currently registered under {{ specialization.specialization_name }}.</p>
+            {% endif %}
+        </section>
+    </div>
+</main>
+
+{% endblock %}
