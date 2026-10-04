@@ -8,7 +8,13 @@ SECRET_KEY = os.environ.get(
     'django-insecure-gdwe02(a%o6-vhztg5zjwx&@r0nf&2ybd8sj^68)$(eusr=%8u',
 )
 
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
+# Vercel sets VERCEL=1 in the build and runtime environment. On Vercel we must
+# default to DEBUG=False; locally (no Vercel, no MySQL) we keep DEBUG=True.
+_ON_VERCEL = bool(os.environ.get('VERCEL'))
+DEBUG = os.environ.get(
+    'DJANGO_DEBUG',
+    'False' if _ON_VERCEL else 'True',
+).lower() in ('1', 'true', 'yes')
 
 ALLOWED_HOSTS = [
     h for h in os.environ.get(
@@ -20,7 +26,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     o for o in os.environ.get(
         'DJANGO_CSRF_TRUSTED_ORIGINS',
-        'https://wellpoint-tau.vercel.app,http://localhost:8000,http://127.0.0.1:8000',
+        'https://wellpoint-tau.vercel.app,https://*.vercel.app,http://localhost:8000,http://127.0.0.1:8000',
     ).split(',') if o
 ]
 
@@ -71,6 +77,19 @@ WSGI_APPLICATION = 'clinic_booking.wsgi.application'
 
 _DATABASE_URL = os.environ.get('DATABASE_URL')
 
+# Aiven requires TLS, and PyMySQL only switches TLS on when the "ssl" dict is
+# non-empty. An empty dict means plaintext, which Aiven refuses, so the
+# certificate is what makes the connection work.
+AIVEN_CA_CERT = BASE_DIR / 'certs' / 'aiven-ca.pem'
+
+
+def _aiven_ssl_options():
+    if AIVEN_CA_CERT.is_file():
+        return {'ca': str(AIVEN_CA_CERT)}
+    # Fallback: encrypt the traffic but skip certificate verification.
+    return {'check_hostname': False, 'verify_mode': 0}
+
+
 if os.environ.get('MYSQL_HOST'):
     DATABASES = {
         'default': {
@@ -80,8 +99,10 @@ if os.environ.get('MYSQL_HOST'):
             'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
             'HOST': os.environ.get('MYSQL_HOST', ''),
             'PORT': os.environ.get('MYSQL_PORT', '3306'),
+            'CONN_MAX_AGE': 0,
             'OPTIONS': {
-                'ssl': {},
+                'charset': 'utf8mb4',
+                'ssl': _aiven_ssl_options(),
             },
         }
     }
