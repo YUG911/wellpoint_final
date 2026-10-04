@@ -733,22 +733,5 @@ class ClinicHoursBoundaryTests(Base):
         self._book(datetime.combine(target, time(10, 0)))
         self.assertEqual(Appointment.objects.count(), 0)
 
-    def test_zz_diagnostic(self):
-        from appointments.views import clinic_opens_at
-        from django.contrib.messages import get_messages
-        out = [f'today={timezone.localdate()} monday={self.monday}']
-        for label, t in [('09:00', time(9, 0)), ('10:00', time(10, 0)),
-                         ('16:30', time(16, 30)), ('17:00', time(17, 0))]:
-            ok, msg = clinic_opens_at(self.clinic, self.monday, t)
-            avail = DoctorAvailability.objects.filter(
-                doctor=self.doc, clinic=self.clinic,
-                day__day_name__iexact=self.monday.strftime('%A'),
-                start_time__lte=t, end_time__gt=t).exists()
-            out.append(f'{label} open={ok} avail={avail} msg={msg!r}')
-        r = self._book(datetime.combine(self.monday, time(10, 0)))
-        msgs = [str(m) for m in get_messages(r.wsgi_request)]
-        out.append(f'book 10:00 -> {Appointment.objects.count()} appts, msgs={msgs}')
-        print('\n'.join(out))
-
 
 from datetime import datetime  # noqa: E402
