@@ -1,4 +1,4 @@
-                    from datetime import datetime
+from datetime import datetime
 
 from django.db.models import Q, Avg
 from django.contrib import messages
@@ -15,6 +15,7 @@ def doctor_list(request):
     specialization = request.GET.get('specialization', '')
     location = request.GET.get('location', '')
 
+    doctors = Doctor.objects.all()
     if search:
         doctors = doctors.filter(
             Q(doctor_name__icontains=search) |
