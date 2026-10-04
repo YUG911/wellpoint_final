@@ -16,7 +16,7 @@ class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=100)
     email = models.CharField(max_length=100, unique=True)
-    phone = models.IntegerField(unique=True)
+    contact_number = models.CharField(max_length=10, null=True, blank=True)
     password_hash = models.CharField(max_length=255)
     address = models.TextField(null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE, db_column='role_id')
@@ -59,14 +59,14 @@ class Clinic(models.Model):
     clinic_name = models.CharField(max_length=100)
     address = models.TextField()
     city = models.ForeignKey(CityMaster, on_delete=models.CASCADE, db_column='city_id')
-    contact_number = models.IntegerField()
+    contact_number = models.CharField(max_length=10)
     latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'clinics'
+        db_table = 'clinics'    
 
     def __str__(self):
         return self.clinic_name
@@ -103,7 +103,7 @@ class Patient(models.Model):
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=20, null=True, blank=True)
     blood_group = models.CharField(max_length=10, null=True, blank=True)
-    emergency_contact = models.IntegerField(null=True, blank=True)
+    emergency_contact = models.CharField(max_length=10, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

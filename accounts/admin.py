@@ -8,9 +8,9 @@ from .models import (
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('user_id', 'full_name', 'email', 'phone', 'role', 'is_verified', 'account_status')
+    list_display = ('user_id', 'full_name', 'email', 'contact_number', 'role', 'is_verified', 'account_status')
     list_filter = ('role', 'is_verified', 'account_status')
-    search_fields = ('full_name', 'email', 'phone')
+    search_fields = ('full_name', 'email', 'contact_number')
 
 
 @admin.register(Role)

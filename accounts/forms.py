@@ -117,9 +117,9 @@ class ClinicForm(forms.Form):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('full_name', 'phone', 'address')
+        fields = ('full_name', 'contact_number', 'address')
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

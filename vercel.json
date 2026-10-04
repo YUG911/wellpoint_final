@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "clinic_booking/wsgi.py": {
+      "maxDuration": 60,
+      "excludeFiles": "**/__pycache__/**,**/*.pyc,**/test_*.py,**/tests.py,**/test-*/**,test-media/**,.vscode/**,.git/**"
+    }
+  }
+}

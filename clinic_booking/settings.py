@@ -71,19 +71,18 @@ WSGI_APPLICATION = 'clinic_booking.wsgi.application'
 
 _DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if _DATABASE_URL:
-    # Vercel / production: a hosted Postgres supplied via DATABASE_URL.
-    from urllib.parse import urlparse, unquote
-
-    _u = urlparse(_DATABASE_URL)
+if os.environ.get('MYSQL_HOST'):
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': unquote(_u.path.lstrip('/')),
-            'USER': unquote(_u.username or ''),
-            'PASSWORD': unquote(_u.password or ''),
-            'HOST': _u.hostname or '',
-            'PORT': str(_u.port or 5432),
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('MYSQL_DATABASE', 'defaultdb'),
+            'USER': os.environ.get('MYSQL_USER', 'avnadmin'),
+            'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'HOST': os.environ.get('MYSQL_HOST', ''),
+            'PORT': os.environ.get('MYSQL_PORT', '3306'),
+            'OPTIONS': {
+                'ssl': {},
+            },
         }
     }
 else:
@@ -93,7 +92,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
