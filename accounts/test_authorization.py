@@ -21,7 +21,7 @@ class AuthorizationTests(TestCase):
             return User.objects.create(
                 full_name=f'{role} User',
                 email=f'{role.lower().replace(" ", "")}{number}@auth.test',
-                phone=9060000000 + number,
+                contact_number=str(9060000000 + number),
                 password_hash=make_password('Secret123!'),
                 role=roles[role],
             )
@@ -116,7 +116,7 @@ class AuthorizationTests(TestCase):
         response = self.client.get(reverse('doctor_appointments'))
         self.assertEqual(response.status_code, 200)
         other_patient_user = User.objects.create(
-            full_name='Other', email='other@auth.test', phone=9060000099,
+            full_name='Other', email='other@auth.test', contact_number=str(9060000099),
             password_hash=make_password('Secret123!'),
             role=Role.objects.filter(role_name='Patient').first(),
         )
@@ -140,7 +140,7 @@ class AuthorizationTests(TestCase):
             self.assertEqual(self.client.get(reverse('profile')).status_code, 200, role)
             self.client.post(reverse('profile'), {
                 'full_name': f'Edited {role}',
-                'phone': 9070000000 + index,
+                'contact_number': str(9070000000 + index),
                 'address': 'Self edited',
             })
             user.refresh_from_db()

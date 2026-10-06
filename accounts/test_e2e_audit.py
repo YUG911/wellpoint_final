@@ -30,7 +30,7 @@ class Base(TestCase):
 
         def mkuser(name, email, phone, role, status='active', verified=True, pw=PW):
             return User.objects.create(
-                full_name=name, email=email, phone=phone,
+                full_name=name, email=email, contact_number=str(phone),
                 password_hash=make_password(pw), role=role,
                 is_verified=verified, account_status=status)
 

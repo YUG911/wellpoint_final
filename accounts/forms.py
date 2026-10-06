@@ -21,7 +21,7 @@ class RegisterForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email address'})
     )
-    phone = forms.IntegerField(
+    contact_number = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your phone number'})
     )
     password = forms.CharField(
@@ -54,11 +54,11 @@ class RegisterForm(forms.Form):
             raise forms.ValidationError("Email already registered.")
         return email
 
-    def clean_phone(self):
-        phone = self.cleaned_data['phone']
-        if User.objects.filter(phone=phone).exists():
-            raise forms.ValidationError("Phone number already registered.")
-        return phone
+    def clean_contact_number(self):
+        contact_number= self.cleaned_data['contact_number']
+        if User.objects.filter(contact_number=contact_number).exists():
+            raise forms.ValidationError("Contact number already registered.")
+        return contact_number
 
 
 class PatientProfileForm(forms.Form):
@@ -79,7 +79,7 @@ class PatientProfileForm(forms.Form):
     ],
     widget=forms.Select(attrs={'class': 'form-control'})
 )
-    emergency_contact = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    emergency_contact = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
 
 
 class DoctorProfileForm(forms.Form):
@@ -103,7 +103,7 @@ class ClinicForm(forms.Form):
     address = forms.CharField(max_length=500, widget=forms.TextInput(attrs={'class': 'form-control'}))
     state = forms.ModelChoiceField(queryset=StateMaster.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}))
     city = forms.ModelChoiceField(queryset=CityMaster.objects.none(), widget=forms.Select(attrs={'class': 'form-control'}))
-    contact_number = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    contact_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
     latitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     longitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
 

@@ -14,7 +14,7 @@ class AccountWorkflowTests(TestCase):
         self.city = CityMaster.objects.create(state=self.state, city_name='Test City')
 
     def user(self, role, number, **values):
-        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), phone=number, password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'))
+        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), contact_number=str(number), password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'))
 
     def login_as(self, user):
         session = self.client.session
@@ -22,7 +22,7 @@ class AccountWorkflowTests(TestCase):
         session.save()
 
     def test_patient_registration_is_two_step_and_hashes_password(self):
-        response = self.client.post(reverse('register'), {'full_name': 'New Patient', 'email': 'new@example.test', 'phone': '9000000001', 'password': 'Secret123!', 'confirm_password': 'Secret123!', 'role': self.roles['Patient'].pk, 'address': 'Address', 'terms_accepted': 'on'})
+        response = self.client.post(reverse('register'), {'full_name': 'New Patient', 'email': 'new@example.test', 'contact_number': '9000000001', 'password': 'Secret123!', 'confirm_password': 'Secret123!', 'role': self.roles['Patient'].pk, 'address': 'Address', 'terms_accepted': 'on'})
         self.assertRedirects(response, reverse('register_patient'))
         user = User.objects.get(email='new@example.test')
         self.assertTrue(check_password('Secret123!', user.password_hash))
@@ -31,7 +31,7 @@ class AccountWorkflowTests(TestCase):
 
     def test_registration_rejects_missing_terms_and_duplicate_contact_data(self):
         self.user('Patient', 9000000003, email='taken@example.test')
-        response = self.client.post(reverse('register'), {'full_name': 'Taken', 'email': 'taken@example.test', 'phone': '9000000003', 'password': 'a', 'confirm_password': 'a', 'role': self.roles['Patient'].pk})
+        response = self.client.post(reverse('register'), {'full_name': 'Taken', 'email': 'taken@example.test', 'contact_number': '9000000003', 'password': 'a', 'confirm_password': 'a', 'role': self.roles['Patient'].pk})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(User.objects.filter(email='taken@example.test').count(), 1)
         self.assertContains(response, 'must accept')
@@ -58,7 +58,7 @@ class AccountWorkflowTests(TestCase):
         patient_user = self.user('Patient', 9000000008)
         Patient.objects.create(user=patient_user, date_of_birth=date(1990, 1, 1))
         self.login_as(patient_user)
-        self.assertRedirects(self.client.post(reverse('profile'), {'full_name': 'Updated', 'phone': '9000000009', 'address': 'New Address'}), reverse('profile'))
+        self.assertRedirects(self.client.post(reverse('profile'), {'full_name': 'Updated', 'contact_number': '9000000009', 'address': 'New Address'}), reverse('profile'))
         patient_user.refresh_from_db()
         self.assertEqual(patient_user.full_name, 'Updated')
         self.assertEqual(self.client.get(reverse('get_cities'), {'state': self.state.state_name}).json()['cities'][0]['city_id'], self.city.pk)

@@ -25,11 +25,11 @@ class ClinicHourRuleTests(TestCase):
         roles = {name: Role.objects.create(role_name=name) for name in ('Patient', 'Doctor', 'Clinic')}
         state = StateMaster.objects.create(state_name='State')
         city = CityMaster.objects.create(state=state, city_name='City')
-        patient_user = User.objects.create(full_name='Patient', email='p@ch.test', phone=9050000001, password_hash=make_password('Secret123!'), role=roles['Patient'])
+        patient_user = User.objects.create(full_name='Patient', email='p@ch.test', contact_number='9050000001', password_hash=make_password('Secret123!'), role=roles['Patient'])
         self.patient = Patient.objects.create(user=patient_user, date_of_birth='1990-01-01')
-        doctor_user = User.objects.create(full_name='Doctor', email='d@ch.test', phone=9050000002, password_hash=make_password('Secret123!'), role=roles['Doctor'])
+        doctor_user = User.objects.create(full_name='Doctor', email='d@ch.test', contact_number='9050000002', password_hash=make_password('Secret123!'), role=roles['Doctor'])
         self.doctor = Doctor.objects.create(user=doctor_user, doctor_name='Hours Doctor', new_patient_fee=500, old_patient_fee=300)
-        clinic_user = User.objects.create(full_name='Clinic', email='c@ch.test', phone=9050000003, password_hash=make_password('Secret123!'), role=roles['Clinic'])
+        clinic_user = User.objects.create(full_name='Clinic', email='c@ch.test', contact_number='9050000003', password_hash=make_password('Secret123!'), role=roles['Clinic'])
         self.clinic = Clinic.objects.create(user=clinic_user, clinic_name='Hours Clinic', address='Address', city=city, contact_number=9050000003)
         DoctorClinic.objects.create(doctor=self.doctor, clinic=self.clinic)
         self.monday, _ = DayMaster.objects.get_or_create(day_name='Monday')
@@ -106,11 +106,11 @@ class ClinicHoursManagementTests(TestCase):
         roles = {name: Role.objects.create(role_name=name) for name in ('Patient', 'Doctor', 'Clinic')}
         state = StateMaster.objects.create(state_name='State')
         city = CityMaster.objects.create(state=state, city_name='City')
-        self.clinic_user = User.objects.create(full_name='Clinic', email='c@chm.test', phone=9050000011, password_hash=make_password('Secret123!'), role=roles['Clinic'])
+        self.clinic_user = User.objects.create(full_name='Clinic', email='c@chm.test', contact_number='9050000011', password_hash=make_password('Secret123!'), role=roles['Clinic'])
         self.clinic = Clinic.objects.create(user=self.clinic_user, clinic_name='Managed Clinic', address='Address', city=city, contact_number=9050000011)
-        self.patient_user = User.objects.create(full_name='Patient', email='p@chm.test', phone=9050000012, password_hash=make_password('Secret123!'), role=roles['Patient'])
+        self.patient_user = User.objects.create(full_name='Patient', email='p@chm.test', contact_number='9050000012', password_hash=make_password('Secret123!'), role=roles['Patient'])
         Patient.objects.create(user=self.patient_user, date_of_birth='1990-01-01')
-        self.doctor_user = User.objects.create(full_name='Doctor', email='d@chm.test', phone=9050000013, password_hash=make_password('Secret123!'), role=roles['Doctor'])
+        self.doctor_user = User.objects.create(full_name='Doctor', email='d@chm.test', contact_number='9050000013', password_hash=make_password('Secret123!'), role=roles['Doctor'])
         self.monday, _ = DayMaster.objects.get_or_create(day_name='Monday')
 
     def login(self, user):

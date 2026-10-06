@@ -56,14 +56,14 @@ class RecommendDoctorViewTests(TestCase):
         roles = {name: Role.objects.create(role_name=name) for name in ('Patient', 'Doctor')}
         state = StateMaster.objects.create(state_name='State')
         city = CityMaster.objects.create(state=state, city_name='City')
-        patient_user = User.objects.create(full_name='Patient', email='p@rec.test', phone=9040000001, password_hash=make_password('Secret123!'), role=roles['Patient'])
+        patient_user = User.objects.create(full_name='Patient', email='p@rec.test', contact_number='9040000001', password_hash=make_password('Secret123!'), role=roles['Patient'])
         self.patient = Patient.objects.create(user=patient_user, date_of_birth='1990-01-01')
-        doctor_user = User.objects.create(full_name='Doctor', email='d@rec.test', phone=9040000002, password_hash=make_password('Secret123!'), role=roles['Doctor'])
+        doctor_user = User.objects.create(full_name='Doctor', email='d@rec.test', contact_number='9040000002', password_hash=make_password('Secret123!'), role=roles['Doctor'])
         self.doctor = Doctor.objects.create(user=doctor_user, doctor_name='Rec Doctor', new_patient_fee=500, old_patient_fee=300)
         spec = SpecializationMaster.objects.create(specialization_name='Dermatologist')
         DoctorSpecialization.objects.create(doctor=self.doctor, specialization=spec)
 
-        clinic_user = User.objects.create(full_name='Clinic', email='c@rec.test', phone=9040000003, password_hash=make_password('Secret123!'), role=Role.objects.create(role_name='Clinic'))
+        clinic_user = User.objects.create(full_name='Clinic', email='c@rec.test', contact_number='9040000003', password_hash=make_password('Secret123!'), role=Role.objects.create(role_name='Clinic'))
         clinic = Clinic.objects.create(user=clinic_user, clinic_name='Clinic', address='Address', city=city, contact_number=9040000003)
         DoctorClinic.objects.create(doctor=self.doctor, clinic=clinic)
 

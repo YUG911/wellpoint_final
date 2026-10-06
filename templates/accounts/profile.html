@@ -17,7 +17,7 @@
                 <h1>{{ user.full_name }}</h1>
                 <p class="doctor-specialization">{{ user.role.role_name }}</p>
                 <p style="color:#64748b;margin:10px 0;"><i class="fa-solid fa-envelope"></i> {{ user.email }}</p>
-                <p style="color:#64748b;margin:10px 0;"><i class="fa-solid fa-phone"></i> {{ user.phone }}</p>
+                <p style="color:#64748b;margin:10px 0;"><i class="fa-solid fa-phone"></i> {{ user.contact_number }}</p>
                 <p style="color:#64748b;margin:5px 0 0;"><i class="fa-solid fa-location-dot"></i> {{ user.address|default:'No address provided' }}</p>
                 <p style="margin-top:15px;"><span class="available-badge">
                     {% if user.is_verified %}
@@ -30,7 +30,7 @@
         </div>
         <form method="post" style="margin-top:28px;max-width:620px;">{% csrf_token %}
             <div class="form-group"><label for="id_full_name">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
-            <div class="form-group"><label for="id_phone">Phone</label>{{ form.phone }}{{ form.phone.errors }}</div>
+            <div class="form-group"><label for="id_contact_number">Phone</label>{{ form.contact_number }}{{ form.contact_number.errors }}</div>
             <div class="form-group"><label for="id_address">Address</label>{{ form.address }}{{ form.address.errors }}</div>
             <button class="btn btn-primary" type="submit">Save Profile</button>
         </form>

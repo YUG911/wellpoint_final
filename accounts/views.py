@@ -79,7 +79,7 @@ def register(request):
             user = User(
                 full_name=form.cleaned_data['full_name'],
                 email=form.cleaned_data['email'],
-                phone=form.cleaned_data['phone'],
+                contact_number=form.cleaned_data['contact_number'],
                 password_hash=make_password(form.cleaned_data['password']),
                 address=form.cleaned_data.get('address', ''),
                 role=role,
@@ -399,7 +399,6 @@ def clinic_profile(request):
         clinic.save(update_fields=['clinic_name', 'address', 'contact_number', 'updated_at'])
         messages.success(request, 'Clinic profile updated.')
         return redirect('clinic_profile')
-    return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})
     return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})
 
 
