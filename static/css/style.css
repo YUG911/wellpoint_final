@@ -472,6 +472,241 @@ img {
     white-space: nowrap;
 }
 
+/* ─── LOCATION PICKER ─────────────────────────────────────────── */
+
+.search-box {
+    position: relative;
+}
+
+.location-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.location-input-wrapper .location-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    cursor: pointer;
+
+    font-size: 15px;
+}
+
+.location-input-wrapper .location-trigger i {
+    color: #ef4444;
+}
+
+.location-input-wrapper input {
+    flex: 1;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+.location-popup {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 60;
+
+    width: 320px;
+    padding: 18px;
+
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.location-popup[hidden] {
+    display: none;
+}
+
+.location-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+}
+
+.location-popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.location-popup-title i {
+    color: #ef4444;
+    margin-right: 6px;
+}
+
+.location-popup-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    font-size: 22px;
+    line-height: 1;
+
+    color: var(--text-light);
+}
+
+.location-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    width: 100%;
+    padding: 11px 14px;
+
+    background: var(--white);
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+
+    color: var(--primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.location-option:hover:not(:disabled) {
+    background: #eff6ff;
+}
+
+.location-option:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.location-popup-separator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin: 14px 0;
+
+    color: var(--text-light);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.location-popup-separator::before,
+.location-popup-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.location-popup-label {
+    display: block;
+    margin-bottom: 6px;
+
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.location-manual-input {
+    width: 100%;
+    padding: 10px 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.location-manual-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.location-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+
+    margin-top: 10px;
+}
+
+.location-chip {
+    padding: 6px 11px;
+
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    color: var(--text-light);
+    font-family: inherit;
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+.location-chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.location-message {
+    margin: 12px 0 0;
+
+    padding: 9px 11px;
+
+    background: #fff7ed;
+    border-radius: 9px;
+
+    color: #9a3412;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.location-popup-actions {
+    margin-top: 16px;
+}
+
+.location-apply {
+    width: 100%;
+    padding: 11px;
+
+    background: var(--primary);
+    border: none;
+    border-radius: 10px;
+
+    color: white;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.location-apply:hover {
+    background: var(--primary-dark);
+}
+
+.search-btn {
+    white-space: nowrap;
+}
+
 .section {
     padding: 100px 0;
 }
@@ -995,4 +1230,48 @@ img {
     font-size: 22px;
 
     cursor: pointer;
+}
+
+/* ─── RESPONSIVE SEARCH BOX ───────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .search-box {
+        grid-template-columns: 1fr 1fr auto;
+        gap: 12px;
+    }
+
+    .search-field {
+        padding-right: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+        margin-bottom: 8px;
+    }
+
+    .search-field:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .search-btn {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .search-box {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .search-field {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 12px;
+    }
+
+    .search-field:last-of-type {
+        border-bottom: none;
+    }
 }

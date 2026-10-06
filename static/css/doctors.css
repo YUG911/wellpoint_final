@@ -354,12 +354,14 @@ a {
 
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 
 .search-input,
 .location-input {
-    flex: 1;
+    flex: 1 1 200px;
 
     display: flex;
     align-items: center;
@@ -367,6 +369,7 @@ a {
     gap: 12px;
 
     padding: 0 18px;
+    min-width: 180px;
 }
 
 
@@ -641,6 +644,8 @@ a {
     gap: 9px;
 
     transition: 0.3s;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 

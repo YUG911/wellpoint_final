@@ -54,7 +54,12 @@
                 <i class="fa-solid fa-location-dot"></i>
                 <div>
                     <label for="location">Location</label>
-                    <input type="text" id="location" name="location" placeholder="City or location">
+                    <div class="location-input-wrapper">
+                        <button type="button" class="location-trigger" id="locationTrigger" aria-label="Use current location" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </button>
+                        <input type="text" id="location" name="location" placeholder="Enter city or use current location" autocomplete="off">
+                    </div>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary search-btn">Search Doctors <i class="fa-solid fa-arrow-right"></i></button>
@@ -124,4 +129,40 @@
     </div>
 </section>
 
+{% endblock %}
+
+<div class="location-popup" id="locationPopup" role="dialog" aria-label="Choose location" hidden>
+    <div class="location-popup-header">
+        <span class="location-popup-title"><i class="fa-solid fa-location-dot"></i> Choose Location</span>
+        <button type="button" class="location-popup-close" id="locationPopupClose" aria-label="Close">&times;</button>
+    </div>
+
+    <button type="button" class="location-option" id="useCurrentLocation">
+        <i class="fa-solid fa-crosshairs"></i>
+        <span>Use Current Location</span>
+    </button>
+
+    <div class="location-popup-separator"><span>OR</span></div>
+
+    <label class="location-popup-label" for="locationManualInput">Enter location manually</label>
+    <input type="text" id="locationManualInput" class="location-manual-input" placeholder="Search area/locality..." autocomplete="off">
+    <div class="location-examples" id="locationExamples">
+        <button type="button" class="location-chip">Ranip</button>
+        <button type="button" class="location-chip">Bapunagar</button>
+        <button type="button" class="location-chip">Kalupur</button>
+        <button type="button" class="location-chip">Bopal</button>
+        <button type="button" class="location-chip">Navrangpura</button>
+        <button type="button" class="location-chip">Maninagar</button>
+        <button type="button" class="location-chip">Satellite</button>
+    </div>
+
+    <p class="location-message" id="locationMessage" role="status" hidden></p>
+
+    <div class="location-popup-actions">
+        <button type="button" class="location-apply" id="locationApply">Apply Location</button>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/main.js' %}"></script>
 {% endblock %}
