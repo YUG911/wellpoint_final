@@ -114,7 +114,7 @@ function onLocationError(error) {
 }
 
 if (locationTrigger && locationPopup) {
-    locationTrigger.addEventListener("click", function (event) {
+    const togglePopup = function (event) {
         event.preventDefault();
         event.stopPropagation();
         if (locationPopup.hidden) {
@@ -123,16 +123,22 @@ if (locationTrigger && locationPopup) {
         } else {
             closeLocationPopup();
         }
-    });
+    };
+    locationTrigger.addEventListener("click", togglePopup);
+    if (locationInput) {
+        locationInput.addEventListener("click", function(event) {
+            event.stopPropagation();
+            if (locationPopup.hidden) {
+                clearLocationMessage();
+                openLocationPopup();
+            }
+        });
+    }
 }
 
 if (locationPopup) {
     locationPopup.addEventListener("click", function (event) {
-        event.preventDefault();
         event.stopPropagation();
-    });
-    locationPopup.addEventListener("submit", function (event) {
-        event.preventDefault();
     });
 }
 
