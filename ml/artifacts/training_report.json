@@ -1,9 +1,8 @@
 {
   "dataset_file": "ml\\dataset\\symptom_specialization_dataset.csv",
   "dataset_type": "educational synthetic teaching dataset (not real patient data)",
-  "algorithm": "DecisionTreeClassifier",
-  "max_depth": 16,
-  "min_samples_leaf": 2,
+  "algorithm": "RandomForestClassifier",
+  "n_estimators": 100,
   "test_size": 0.2,
   "random_state": 42,
   "number_of_samples": 600,
@@ -23,12 +22,12 @@
     "Urology"
   ],
   "number_of_features": 134,
-  "accuracy": 0.9333,
-  "precision": 0.96,
-  "recall": 0.93,
-  "f1_score": 0.94,
-  "training_time_seconds": 0.0077,
-  "inference_time_seconds": 0.00035,
-  "total_time_seconds": 0.0787,
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "training_time_seconds": 0.1442,
+  "inference_time_seconds": 0.005007,
+  "total_time_seconds": 0.3003,
   "model_file": "ml\\artifacts\\doctor_recommender.joblib"
 }

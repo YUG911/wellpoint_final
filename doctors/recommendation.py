@@ -85,7 +85,12 @@ def match_specialization(predicted_name):
 
     def normalise(value):
         value = value.lower()
-        for suffix in ("ologist", "ology", "ist"):
+        if "general" in value and "physician" in value: return "generalmedicine"
+        if "general" in value and "medicine" in value: return "generalmedicine"
+        if "ent" in value: return "ent"
+        if "orthopedic" in value: return "orthopedics"
+        
+        for suffix in ("ologist", "ology", "ist", "ics"):
             if value.endswith(suffix):
                 value = value[: -len(suffix)]
                 break

@@ -48,7 +48,7 @@
                         {{ form.contact_number.errors }}
                     </div>
 
-                    <div class="form-row" style="display:flex;gap:15px;">
+                    <div class="form-row" style="display:flex;gap:15px;align-items:flex-end;">
                         <div class="form-group" style="flex:1;">
                             <label for="id_latitude">Latitude</label>
                             {{ form.latitude }}
@@ -59,7 +59,13 @@
                             {{ form.longitude }}
                             {{ form.longitude.errors }}
                         </div>
+                        <div class="form-group">
+                            <button type="button" id="detectLocationBtn" class="btn btn-secondary" style="padding:10px;border-radius:6px;background:#e2e8f0;border:none;cursor:pointer;">
+                                <i class="fa-solid fa-location-crosshairs"></i> Detect Location
+                            </button>
+                        </div>
                     </div>
+                    <div id="locationError" style="color:#b91c1c;font-size:12px;margin-bottom:15px;"></div>
 
                     <button type="submit" class="create-account-button"><span>Complete Registration</span><i class="fa-solid fa-arrow-right"></i></button>
                 </form>
@@ -93,5 +99,42 @@ stateSelect.addEventListener('change', function() {
             });
         });
 });
+const detectLocationBtn = document.getElementById('detectLocationBtn');
+const locationError = document.getElementById('locationError');
+const latInput = document.getElementById('id_latitude');
+const lonInput = document.getElementById('id_longitude');
+
+if (detectLocationBtn) {
+    detectLocationBtn.addEventListener('click', function() {
+        locationError.textContent = 'Detecting location...';
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    latInput.value = position.coords.latitude.toFixed(7);
+                    lonInput.value = position.coords.longitude.toFixed(7);
+                    locationError.textContent = '';
+                },
+                function(error) {
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            locationError.textContent = "Location permission denied by user.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            locationError.textContent = "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            locationError.textContent = "The request to get user location timed out.";
+                            break;
+                        case error.UNKNOWN_ERROR:
+                            locationError.textContent = "An unknown error occurred.";
+                            break;
+                    }
+                }
+            );
+        } else {
+            locationError.textContent = "Geolocation is not supported by this browser.";
+        }
+    });
+}
 </script>
 {% endblock %}

@@ -12,9 +12,29 @@ from accounts.models import (
 )
 from doctors.models import Doctor, Review, SpecializationMaster
 from appointments.models import Appointment
+from accounts.context_processors import login_required, role_required, current_user
+
+
+def redirect_user_dashboard(user):
+    role = user.role.role_name.lower()
+    if role == 'patient':
+        return redirect('patient_dashboard')
+    if role == 'doctor':
+        return redirect('doctor_dashboard')
+    if role == 'clinic':
+        return redirect('clinic_dashboard')
+    if role == 'clinic staff':
+        return redirect('staff_dashboard')
+    if role == 'admin':
+        return redirect('admin_dashboard')
+    return redirect('home')
 
 
 def home(request):
+    user = current_user(request)
+    if user:
+        return redirect_user_dashboard(user)
+
     doctors = Doctor.objects.all()[:3]
     specializations = SpecializationMaster.objects.all()
     return render(request, 'home.html', {
@@ -25,6 +45,10 @@ def home(request):
 
 
 def login_view(request):
+    user = current_user(request)
+    if user:
+        return redirect_user_dashboard(user)
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -44,18 +68,7 @@ def login_view(request):
                 request.session['user_id'] = user.user_id
                 messages.success(request, f"Welcome back, {user.full_name}!")
 
-                role = user.role.role_name.lower()
-                if role == 'patient':
-                    return redirect('patient_dashboard')
-                if role == 'doctor':
-                    return redirect('doctor_dashboard')
-                if role == 'clinic':
-                    return redirect('clinic_dashboard')
-                if role == 'clinic staff':
-                    return redirect('staff_dashboard')
-                if role == 'admin':
-                    return redirect('admin_dashboard')
-                return redirect('home')
+                return redirect_user_dashboard(user)
             else:
                 messages.error(request, "Invalid email or password.")
                 return render(request, 'accounts/login.html', {'form': form})
@@ -72,6 +85,10 @@ def logout_view(request):
 
 
 def register(request):
+    user = current_user(request)
+    if user:
+        return redirect_user_dashboard(user)
+
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -202,9 +219,6 @@ def register_staff(request):
     clinics = Clinic.objects.all()
     return render(request, 'accounts/register_staff.html', {'clinics': clinics})
 
-
-
-from accounts.context_processors import login_required, role_required, current_user
 
 
 

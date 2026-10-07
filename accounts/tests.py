@@ -40,6 +40,7 @@ class AccountWorkflowTests(TestCase):
         patient_user = self.user('Patient', 9000000004)
         Patient.objects.create(user=patient_user, date_of_birth=date(1990, 1, 1))
         self.assertRedirects(self.client.post(reverse('login'), {'email': patient_user.email, 'password': 'Secret123!'}), reverse('patient_dashboard'))
+        self.client.session.flush()
         blocked = self.user('Patient', 9000000005, account_status='inactive')
         self.assertEqual(self.client.post(reverse('login'), {'email': blocked.email, 'password': 'Secret123!'}).status_code, 200)
 

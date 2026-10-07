@@ -100,7 +100,7 @@ class RecommendDoctorViewTests(TestCase):
         session = self.client.session
         session['user_id'] = self.doctor.user_id
         session.save()
-        self.assertRedirects(self.client.get(reverse('recommend_doctor')), reverse('login'))
+        self.assertRedirects(self.client.get(reverse('recommend_doctor')), reverse('login'), fetch_redirect_response=False)
 
     def test_recommendation_does_not_create_appointments_or_choose_a_doctor_by_model(self):
         self.client.post(reverse('recommend_doctor'), {'symptoms': 'chest pain, palpitations, sweating'})

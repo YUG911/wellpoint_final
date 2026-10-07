@@ -1275,3 +1275,69 @@ img {
         border-bottom: none;
     }
 }
+
+/* Comprehensive Responsive Media Queries */
+@media (max-width: 1024px) {
+    .features-grid, .steps-grid, .doctors-grid, .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .hero-container {
+        gap: 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding-top: 40px;
+    }
+    .hero-buttons, .trust-items {
+        justify-content: center;
+    }
+    .features-grid, .steps-grid, .doctors-grid, .footer-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .nav-links {
+        display: none;
+    }
+    .nav-actions {
+        gap: 10px;
+    }
+    .search-box {
+        grid-template-columns: 1fr;
+    }
+    .search-field {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 15px;
+    }
+    .stats-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .hero-image-wrapper {
+        margin-top: 40px;
+    }
+    .appointment-card {
+        bottom: 10px;
+        left: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 32px;
+    }
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .hero-buttons {
+        flex-direction: column;
+    }
+    .section {
+        padding: 60px 0;
+    }
+}

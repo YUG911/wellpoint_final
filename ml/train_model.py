@@ -24,7 +24,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 DATASET_FILE = BASE_DIR / "dataset" / "symptom_specialization_dataset.csv"
@@ -131,9 +131,8 @@ def main():
     print("Training started...")
     fit_start = time.perf_counter()
     X_train_matrix = vectorizer.fit_transform(X_train)
-    model = DecisionTreeClassifier(
-        max_depth=MAX_TREE_DEPTH,
-        min_samples_leaf=MIN_SAMPLES_LEAF,
+    model = RandomForestClassifier(
+        n_estimators=100,
         random_state=RANDOM_STATE,
     )
     model.fit(X_train_matrix, y_train)
@@ -191,9 +190,8 @@ def main():
             {
                 "dataset_file": str(DATASET_FILE.relative_to(BASE_DIR.parent)),
                 "dataset_type": "educational synthetic teaching dataset (not real patient data)",
-                "algorithm": "DecisionTreeClassifier",
-                "max_depth": MAX_TREE_DEPTH,
-                "min_samples_leaf": MIN_SAMPLES_LEAF,
+                "algorithm": "RandomForestClassifier",
+                "n_estimators": 100,
                 "test_size": TEST_SIZE,
                 "random_state": RANDOM_STATE,
                 "number_of_samples": len(frame),

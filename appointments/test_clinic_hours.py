@@ -153,9 +153,10 @@ class ClinicHoursManagementTests(TestCase):
             session = self.client.session
             session['user_id'] = user.pk
             session.save()
-            self.assertRedirects(self.client.get(reverse('clinic_hours')), reverse('login'))
+            self.assertRedirects(self.client.get(reverse('clinic_hours')), reverse('login'), fetch_redirect_response=False)
             self.assertRedirects(
                 self.client.post(reverse('clinic_hours'), {f'open_{self.monday.pk}': '09:00', f'close_{self.monday.pk}': '17:00'}),
                 reverse('login'),
+                fetch_redirect_response=False
             )
         self.assertFalse(ClinicHours.objects.filter(clinic=self.clinic).exists())
