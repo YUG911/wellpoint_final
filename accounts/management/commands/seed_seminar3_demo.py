@@ -18,9 +18,9 @@ class Command(BaseCommand):
     def first_or_create(self, model, defaults=None, **lookup):
         return model.objects.filter(**lookup).first() or model.objects.create(**lookup, **(defaults or {}))
 
-    def user(self, role, email, phone, full_name):
+    def user(self, role, email, contact_number, full_name):
         return User.objects.filter(email=email).first() or User.objects.create(
-            full_name=full_name, email=email, phone=phone,
+            full_name=full_name, email=email, contact_number=contact_number,
             password_hash=make_password('Seminar3Demo!'), role=role,
             is_verified=True, account_status='active',
         )
@@ -55,10 +55,10 @@ class Command(BaseCommand):
             ('Mumbai Family Care Clinic', 'Maharashtra', 'Mumbai', 'demo.clinic.mumbai@wellpoint.test', 9100001003),
         ]
         clinics = {}
-        for name, state, city, email, phone in clinic_specs:
-            owner = self.user(roles['Clinic'], email, phone, name + ' Owner')
+        for name, state, city, email, contact_number in clinic_specs:
+            owner = self.user(roles['Clinic'], email, contact_number, name + ' Owner')
             clinics[name] = self.first_or_create(Clinic, user=owner, defaults={
-                'clinic_name': name, 'address': 'Demo healthcare address', 'city': cities[(state, city)], 'contact_number': phone,
+                'clinic_name': name, 'address': 'Demo healthcare address', 'city': cities[(state, city)], 'contact_number': contact_number,
             })
 
         doctor_specs = [

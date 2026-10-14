@@ -8,10 +8,26 @@ from accounts.models import Patient, Clinic, DayMaster
 from appointments.models import Appointment
 
 
+import os
+from django.conf import settings
+import joblib
+
 def doctor_list(request):
     search = request.GET.get('search', '')
     specialization = request.GET.get('specialization', '')
     location = request.GET.get('location', '')
+    symptoms = request.GET.get('symptoms', '')
+    
+    predicted_specialization = None
+    if symptoms:
+        try:
+            model_path = os.path.join(settings.BASE_DIR, 'ml_model', 'symptom_model.joblib')
+            pipeline = joblib.load(model_path)
+            predicted_specialization = pipeline.predict([symptoms])[0]
+            # Override specialization with the predicted one
+            specialization = predicted_specialization
+        except Exception as e:
+            print("ML Prediction Error:", e)
 
     doctors = Doctor.objects.all()
     if search:
@@ -19,9 +35,9 @@ def doctor_list(request):
             Q(doctor_name__icontains=search) |
             Q(doctor_specialization__specialization__specialization_name__icontains=search)
         ).distinct()
-    if specialization:
+    if specialization and specialization.strip():
         doctors = doctors.filter(
-            doctor_specialization__specialization__specialization_name__icontains=specialization
+            doctor_specialization__specialization__specialization_name__iexact=specialization.strip()
         ).distinct()
     if location:
         doctors = doctors.filter(
@@ -36,6 +52,8 @@ def doctor_list(request):
         'doctors': doctors,
         'specializations': specializations,
         'cities': cities,
+        'predicted_specialization': predicted_specialization,
+        'symptoms_query': symptoms,
     })
 
 

@@ -5,7 +5,8 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Admin, CityMaster, Clinic, Patient, Role, StateMaster, User, VerificationLog
+from .models import Admin, CityMaster, Clinic, ClinicStaff, Patient, Role, StateMaster, User, VerificationLog
+from doctors.models import Doctor
 
 
 class AccountWorkflowTests(TestCase):
@@ -15,7 +16,7 @@ class AccountWorkflowTests(TestCase):
         self.city = CityMaster.objects.create(state=self.state, city_name='Test City')
 
     def user(self, role, number, **values):
-        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), phone=number, password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'))
+        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), contact_number=number, password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'))
 
     def login_as(self, user):
         session = self.client.session
@@ -23,7 +24,7 @@ class AccountWorkflowTests(TestCase):
         session.save()
 
     def test_patient_registration_is_two_step_and_hashes_password(self):
-        response = self.client.post(reverse('register'), {'full_name': 'New Patient', 'email': 'new@example.test', 'phone': '9000000001', 'password': 'Secret123!', 'confirm_password': 'Secret123!', 'role': self.roles['Patient'].pk, 'address': 'Address', 'terms_accepted': 'on'})
+        response = self.client.post(reverse('register'), {'full_name': 'New Patient', 'email': 'new@example.test', 'contact_number': '9000000001', 'password': 'Secret123!', 'confirm_password': 'Secret123!', 'role': self.roles['Patient'].pk, 'address': 'Address', 'terms_accepted': 'on'})
         self.assertRedirects(response, reverse('register_patient'))
         user = User.objects.get(email='new@example.test')
         self.assertTrue(check_password('Secret123!', user.password_hash))
@@ -32,7 +33,7 @@ class AccountWorkflowTests(TestCase):
 
     def test_registration_rejects_missing_terms_and_duplicate_contact_data(self):
         self.user('Patient', 9000000003, email='taken@example.test')
-        response = self.client.post(reverse('register'), {'full_name': 'Taken', 'email': 'taken@example.test', 'phone': '9000000003', 'password': 'a', 'confirm_password': 'a', 'role': self.roles['Patient'].pk})
+        response = self.client.post(reverse('register'), {'full_name': 'Taken', 'email': 'taken@example.test', 'contact_number': '9000000003', 'password': 'a', 'confirm_password': 'a', 'role': self.roles['Patient'].pk})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(User.objects.filter(email='taken@example.test').count(), 1)
         self.assertContains(response, 'must accept')
@@ -41,6 +42,7 @@ class AccountWorkflowTests(TestCase):
         patient_user = self.user('Patient', 9000000004)
         Patient.objects.create(user=patient_user, date_of_birth=date(1990, 1, 1))
         self.assertRedirects(self.client.post(reverse('login'), {'email': patient_user.email, 'password': 'Secret123!'}), reverse('patient_dashboard'))
+        self.client.logout()
         blocked = self.user('Patient', 9000000005, account_status='inactive')
         self.assertEqual(self.client.post(reverse('login'), {'email': blocked.email, 'password': 'Secret123!'}).status_code, 200)
 
@@ -59,7 +61,7 @@ class AccountWorkflowTests(TestCase):
         patient_user = self.user('Patient', 9000000008)
         Patient.objects.create(user=patient_user, date_of_birth=date(1990, 1, 1))
         self.login_as(patient_user)
-        self.assertRedirects(self.client.post(reverse('profile'), {'full_name': 'Updated', 'phone': '9000000009', 'address': 'New Address'}), reverse('profile'))
+        self.assertRedirects(self.client.post(reverse('profile'), {'full_name': 'Updated', 'contact_number': '9000000009', 'address': 'New Address'}), reverse('profile'))
         patient_user.refresh_from_db()
         self.assertEqual(patient_user.full_name, 'Updated')
         self.assertEqual(self.client.get(reverse('get_cities'), {'state': self.state.state_name}).json()['cities'][0]['city_id'], self.city.pk)
@@ -71,3 +73,78 @@ class AccountWorkflowTests(TestCase):
         clinic_user = User.objects.get(email='demo.clinic.ahmedabad@wellpoint.test')
         self.assertTrue(Clinic.objects.filter(user=clinic_user).exists())
         self.assertTrue(CityMaster.objects.filter(state__state_name='Gujarat', city_name='Ahmedabad').exists())
+
+    def test_unverified_versus_verified_provider_login(self):
+        # 1. Doctor unverified -> rejected; verified -> allowed
+        doc_user = self.user('Doctor', 9000000010, is_verified=False)
+        Doctor.objects.create(user=doc_user, doctor_name='Dr. Test', experience=5, new_patient_fee=500, old_patient_fee=300)
+        res = self.client.post(reverse('login'), {'email': doc_user.email, 'password': 'Secret123!'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'pending administrative verification')
+        self.assertNotIn('user_id', self.client.session)
+
+        doc_user.is_verified = True
+        doc_user.save()
+        res_ok = self.client.post(reverse('login'), {'email': doc_user.email, 'password': 'Secret123!'})
+        self.assertRedirects(res_ok, reverse('doctor_dashboard'))
+        self.client.logout()
+
+        # 2. Clinic unverified -> rejected; verified -> allowed
+        clinic_user = self.user('Clinic', 9000000011, is_verified=False)
+        Clinic.objects.create(user=clinic_user, clinic_name='Test Clinic', address='Address', city=self.city, contact_number=9000000011)
+        res = self.client.post(reverse('login'), {'email': clinic_user.email, 'password': 'Secret123!'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'pending administrative verification')
+
+        clinic_user.is_verified = True
+        clinic_user.save()
+        res_ok = self.client.post(reverse('login'), {'email': clinic_user.email, 'password': 'Secret123!'})
+        self.assertRedirects(res_ok, reverse('clinic_dashboard'))
+        self.client.logout()
+
+        # 3. Clinic Staff unverified -> rejected; verified -> allowed
+        staff_user = self.user('Clinic Staff', 9000000012, is_verified=False)
+        clinic_owner_tmp = self.user('Clinic', 9000000099, is_verified=True)
+        clinic_tmp = Clinic.objects.create(user=clinic_owner_tmp, clinic_name='Clinic Tmp', address='T', city=self.city, contact_number=9000000099)
+        ClinicStaff.objects.create(user=staff_user, clinic=clinic_tmp)
+        res = self.client.post(reverse('login'), {'email': staff_user.email, 'password': 'Secret123!'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'pending administrative verification')
+
+        staff_user.is_verified = True
+        staff_user.save()
+        res_ok = self.client.post(reverse('login'), {'email': staff_user.email, 'password': 'Secret123!'})
+        self.assertRedirects(res_ok, reverse('staff_dashboard'))
+        self.client.logout()
+
+        # 4. Patient does NOT require verification -> allowed immediately
+        patient_user = self.user('Patient', 9000000013, is_verified=False)
+        Patient.objects.create(user=patient_user, date_of_birth=date(1995, 5, 5))
+        res_patient = self.client.post(reverse('login'), {'email': patient_user.email, 'password': 'Secret123!'})
+        self.assertRedirects(res_patient, reverse('patient_dashboard'))
+
+    def test_unauthorized_staff_registration_and_clinic_isolation(self):
+        # Direct POST without prior Clinic Staff registration session is rejected
+        clinic_owner = self.user('Clinic', 9000000014, is_verified=True)
+        clinic_a = Clinic.objects.create(user=clinic_owner, clinic_name='Clinic A', address='A', city=self.city, contact_number=9000000014)
+
+        # Unauthenticated / un-initiated attempt to link to clinic
+        res = self.client.post(reverse('register_staff'), {'clinic': clinic_a.pk})
+        self.assertRedirects(res, reverse('register'))
+        self.assertEqual(ClinicStaff.objects.count(), 0)
+
+        # Authorized staff flow enforces verification and clinic isolation
+        staff_user = self.user('Clinic Staff', 9000000015, is_verified=False)
+        session = self.client.session
+        session['reg_user_id'] = staff_user.pk
+        session['reg_role'] = 'Clinic Staff'
+        session.save()
+
+        res_reg = self.client.post(reverse('register_staff'), {'clinic': clinic_a.pk})
+        self.assertRedirects(res_reg, reverse('login'))
+        self.assertTrue(ClinicStaff.objects.filter(user=staff_user, clinic=clinic_a).exists())
+
+        # Unverified staff member cannot log in to access clinic appointments
+        login_res = self.client.post(reverse('login'), {'email': staff_user.email, 'password': 'Secret123!'})
+        self.assertEqual(login_res.status_code, 200)
+        self.assertContains(login_res, 'pending administrative verification')

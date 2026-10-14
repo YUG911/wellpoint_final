@@ -24,5 +24,6 @@ urlpatterns = [
     path("admin/verification-history/", views.verification_history, name="verification_history"),
     path("clinic/appointments/", views.clinic_appointments, name="clinic_appointments"),
     path("clinic/profile/", views.clinic_profile, name="clinic_profile"),
+    path("clinic/add-doctor/", views.add_clinic_doctor, name="add_clinic_doctor"),
     path("get-cities/", views.get_cities, name="get_cities"),
 ]

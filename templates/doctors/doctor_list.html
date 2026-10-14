@@ -18,6 +18,10 @@
                 <input type="text" id="searchInput" name="search" placeholder="Search doctor or specialization" value="{{ request.GET.search|default:'' }}">
             </div>
             <div class="search-divider"></div>
+            <div class="location-input" style="flex: 1.5;">
+                <i class="fa-solid fa-notes-medical"></i>
+                <input type="text" id="symptomsInput" name="symptoms" placeholder="Not sure? Describe symptoms" value="{{ symptoms_query|default:'' }}">
+            </div>
             <div class="location-input">
                 <i class="fa-solid fa-location-dot"></i>
                 <input type="text" id="locationInput" name="location" placeholder="Enter location" value="{{ request.GET.location|default:'' }}">
@@ -71,6 +75,14 @@
         </aside>
 
         <section class="doctors-section">
+            {% if predicted_specialization %}
+            <div class="alert alert-info" style="background:#e0f2fe; color:#0369a1; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-robot"></i>
+                <div>
+                    <strong>AI Recommendation:</strong> Based on your symptoms, we recommend seeing a <strong>{{ predicted_specialization }}</strong>.
+                </div>
+            </div>
+            {% endif %}
             <div class="results-header">
                 <div>
                     <p class="results-label">AVAILABLE DOCTORS</p>

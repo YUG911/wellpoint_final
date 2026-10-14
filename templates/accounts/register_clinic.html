@@ -48,7 +48,7 @@
                         {{ form.contact_number.errors }}
                     </div>
 
-                    <div class="form-row" style="display:flex;gap:15px;">
+                    <div class="form-row" style="display:flex;gap:15px;align-items:flex-end;">
                         <div class="form-group" style="flex:1;">
                             <label for="id_latitude">Latitude</label>
                             {{ form.latitude }}
@@ -59,7 +59,23 @@
                             {{ form.longitude }}
                             {{ form.longitude.errors }}
                         </div>
+                        <button type="button" id="getLocationBtn" class="btn btn-outline" style="height:45px; margin-bottom:15px;"><i class="fa-solid fa-location-crosshairs"></i> Get Location</button>
                     </div>
+
+                    <script>
+                        document.getElementById('getLocationBtn').addEventListener('click', function() {
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(function(position) {
+                                    document.getElementById('id_latitude').value = position.coords.latitude.toFixed(7);
+                                    document.getElementById('id_longitude').value = position.coords.longitude.toFixed(7);
+                                }, function(error) {
+                                    alert("Could not get location. Please allow location access or enter manually.");
+                                });
+                            } else {
+                                alert("Geolocation is not supported by this browser.");
+                            }
+                        });
+                    </script>
 
                     <button type="submit" class="create-account-button"><span>Complete Registration</span><i class="fa-solid fa-arrow-right"></i></button>
                 </form>

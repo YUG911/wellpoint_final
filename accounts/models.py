@@ -16,7 +16,7 @@ class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=100)
     email = models.CharField(max_length=100, unique=True)
-    phone = models.IntegerField(unique=True)
+    contact_number = models.IntegerField(unique=True)
     password_hash = models.CharField(max_length=255)
     address = models.TextField(null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE, db_column='role_id')

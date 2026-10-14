@@ -4,3 +4,9 @@ __pycache__/
 db.sqlite3
 .env
 test-media/
+staticfiles/
+media/
+
+# Temporary scratch and patch scripts
+patch_*.py
+make_seed.py

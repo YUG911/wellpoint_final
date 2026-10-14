@@ -56,7 +56,13 @@
             </tbody>
         </table>
         {% else %}
-        <p style="color:#64748b;">No appointments for this clinic.</p>
+        <div class="card shadow-sm border-0 mt-4 text-center p-5 bg-light rounded" style="background-color: #f8fafc !important;">
+            <div class="card-body">
+                <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 3rem; color: #94a3b8 !important;"></i>
+                <h4 class="text-muted" style="color: #64748b !important;">No Appointments</h4>
+                <p class="text-muted mb-0" style="color: #64748b !important;">There are no appointments for this clinic.</p>
+            </div>
+        </div>
         {% endif %}
     </div>
 </div>

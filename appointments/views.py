@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db import transaction
+from django.db import transaction, IntegrityError, OperationalError
 from django.utils import timezone
 from accounts.context_processors import login_required, role_required, current_user
 from .models import Appointment, Payment
@@ -64,18 +64,38 @@ def book_appointment(request, doctor_id):
 
         fee = doctor.new_patient_fee if patient_type == 'New' else doctor.old_patient_fee
 
-        # Recheck in one transaction immediately before inserting.
-        with transaction.atomic():
-            if Appointment.objects.filter(doctor=doctor, appointment_date=selected_date,
-                                          appointment_time=selected_time,
-                                          status__in=['Pending', 'Confirmed']).exists():
-                messages.error(request, "This time slot was just booked. Please select another.")
-                return redirect('book_appointment', doctor_id=doctor_id)
-            appointment = Appointment.objects.create(
-                patient=patient, doctor=doctor, clinic=clinic,
-                appointment_date=selected_date, appointment_time=selected_time,
-                symptoms=symptoms, status='Pending', patient_type=patient_type,
-                fee_charged=fee)
+        # Concurrency-safe atomic section with row locking on the Doctor
+        try:
+            with transaction.atomic():
+                Doctor.objects.select_for_update().get(doctor_id=doctor.doctor_id)
+                if Appointment.objects.filter(doctor=doctor, appointment_date=selected_date,
+                                              appointment_time=selected_time,
+                                              status__in=['Pending', 'Confirmed']).exists():
+                    messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+                    return redirect('book_appointment', doctor_id=doctor_id)
+                appointment = Appointment.objects.create(
+                    patient=patient, doctor=doctor, clinic=clinic,
+                    appointment_date=selected_date, appointment_time=selected_time,
+                    symptoms=symptoms, status='Pending', patient_type=patient_type,
+                    fee_charged=fee)
+        except IntegrityError:
+            messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+            return redirect('book_appointment', doctor_id=doctor_id)
+        except OperationalError:
+            slot_occupied = False
+            try:
+                slot_occupied = Appointment.objects.filter(
+                    doctor=doctor, appointment_date=selected_date,
+                    appointment_time=selected_time, status__in=['Pending', 'Confirmed']
+                ).exists()
+            except OperationalError:
+                slot_occupied = False
+
+            if slot_occupied:
+                messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+            else:
+                messages.error(request, "The booking system is currently busy. Please try again.")
+            return redirect('book_appointment', doctor_id=doctor_id)
         return redirect('appointment_confirmation', appointment_id=appointment.appointment_id)
 
     # Get available slots
@@ -91,9 +111,8 @@ def book_appointment(request, doctor_id):
             if d.strftime('%A').lower() == day_name:
                 date_str = d.strftime('%Y-%m-%d')
                 if date_str not in available_slots:
-                    available_slots[date_str] = {'date': d, 'slots': [], 'clinic': avail.clinic}
+                    available_slots[date_str] = {'date': d, 'slots': []}
 
-    # Remove already booked slots
     booked = Appointment.objects.filter(
         doctor=doctor, appointment_date__in=[s['date'] for s in available_slots.values()],
         status__in=['Pending', 'Confirmed']
@@ -101,10 +120,8 @@ def book_appointment(request, doctor_id):
 
     for date_str, data in available_slots.items():
         d = data['date']
-        # Get availability for this date
         day_qs = availabilities.filter(day__day_name__iexact=d.strftime('%A'))
-        if day_qs:
-            avail_obj = day_qs.first()
+        for avail_obj in day_qs:
             start_time = datetime.strptime(str(avail_obj.start_time), '%H:%M:%S').time()
             end_time = datetime.strptime(str(avail_obj.end_time), '%H:%M:%S').time()
 
@@ -117,9 +134,13 @@ def book_appointment(request, doctor_id):
                     b[0] == d and b[1] == current.time()
                     for b in booked
                 )
-                if not already_booked:
-                    data['slots'].append(slot_time)
+                slot_entry = {'time': slot_time, 'clinic_id': avail_obj.clinic.clinic_id}
+                if not already_booked and slot_entry not in data['slots']:
+                    data['slots'].append(slot_entry)
                 current += interval
+        
+        # Sort slots chronologically
+        data['slots'].sort(key=lambda x: x['time'])
 
     # Filter out dates with no slots
     available_slots = {k: v for k, v in available_slots.items() if v['slots']}
@@ -186,47 +207,70 @@ def reschedule_appointment(request, appointment_id):
                 end_time__gt=selected_time).exists():
             messages.error(request, "That time is not available at this clinic.")
             return redirect('reschedule_appointment', appointment_id=appointment_id)
-        if Appointment.objects.filter(
-            doctor=doctor, appointment_date=selected_date,
-            appointment_time=selected_time, status__in=['Pending', 'Confirmed']
-        ).exclude(appointment_id=appointment_id).exists():
-            messages.error(request, "This time slot is already booked.")
+        try:
+            with transaction.atomic():
+                Doctor.objects.select_for_update().get(doctor_id=doctor.doctor_id)
+                if Appointment.objects.filter(
+                    doctor=doctor, appointment_date=selected_date,
+                    appointment_time=selected_time, status__in=['Pending', 'Confirmed']
+                ).exclude(appointment_id=appointment_id).exists():
+                    messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+                    return redirect('reschedule_appointment', appointment_id=appointment_id)
+
+                appointment.appointment_date = selected_date
+                appointment.appointment_time = selected_time
+                appointment.save()
+        except IntegrityError:
+            messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+            return redirect('reschedule_appointment', appointment_id=appointment_id)
+        except OperationalError:
+            slot_occupied = False
+            try:
+                slot_occupied = Appointment.objects.filter(
+                    doctor=doctor, appointment_date=selected_date,
+                    appointment_time=selected_time, status__in=['Pending', 'Confirmed']
+                ).exclude(appointment_id=appointment_id).exists()
+            except OperationalError:
+                slot_occupied = False
+
+            if slot_occupied:
+                messages.error(request, "This time slot was just booked by another patient. Please select another time.")
+            else:
+                messages.error(request, "The rescheduling system is currently busy. Please try again.")
             return redirect('reschedule_appointment', appointment_id=appointment_id)
 
-        appointment.appointment_date = selected_date
-        appointment.appointment_time = selected_time
-        appointment.save()
         messages.success(request, "Appointment rescheduled successfully.")
         return redirect('my_appointments')
 
     today = datetime.now().date()
-    availabilities = DoctorAvailability.objects.filter(doctor=doctor).select_related('day', 'clinic')
+    availabilities = DoctorAvailability.objects.filter(doctor=doctor, clinic=appointment.clinic).select_related('day', 'clinic')
 
     available_slots = {}
     for d_idx in range(14):
         d = today + timedelta(days=d_idx)
         day_name = d.strftime('%A').lower()
         day_qs = availabilities.filter(day__day_name__iexact=day_name)
-        if day_qs:
-            avail_obj = day_qs.first()
+        if day_qs.exists():
             date_str = d.strftime('%Y-%m-%d')
-            start_time = datetime.strptime(str(avail_obj.start_time), '%H:%M:%S').time()
-            end_time = datetime.strptime(str(avail_obj.end_time), '%H:%M:%S').time()
-
-            current = datetime.combine(d, start_time)
-            end_dt = datetime.combine(d, end_time)
-            interval = timedelta(minutes=30)
             slots = []
-            while current < end_dt:
-                slot_time = current.time().strftime('%H:%M')
-                already_booked = Appointment.objects.filter(
-                    doctor=doctor, appointment_date=d,
-                    appointment_time=current.time()
-                ).exclude(appointment_id=appointment_id).exists()
-                if not already_booked:
-                    slots.append(slot_time)
-                current += interval
+            for avail_obj in day_qs:
+                start_time = datetime.strptime(str(avail_obj.start_time), '%H:%M:%S').time()
+                end_time = datetime.strptime(str(avail_obj.end_time), '%H:%M:%S').time()
+
+                current = datetime.combine(d, start_time)
+                end_dt = datetime.combine(d, end_time)
+                interval = timedelta(minutes=30)
+                while current < end_dt:
+                    slot_time = current.time().strftime('%H:%M')
+                    already_booked = Appointment.objects.filter(
+                        doctor=doctor, appointment_date=d,
+                        appointment_time=current.time()
+                    ).exclude(appointment_id=appointment_id).exists()
+                    if not already_booked and slot_time not in slots:
+                        slots.append(slot_time)
+                    current += interval
             if slots:
+                slots.sort()
                 available_slots[date_str] = {'date': d, 'slots': slots}
 
     return render(request, 'appointments/reschedule_appointment.html', {

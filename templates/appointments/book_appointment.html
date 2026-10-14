@@ -75,9 +75,9 @@
                     <strong>{{ slot_data.date|date:"l, F j, Y" }}</strong>
                     <div class="time-slot-grid">
                         {% for slot in slot_data.slots %}
-                        <label class="time-slot-label">
-                            <input type="radio" name="appointment_time" value="{{ slot }}" onchange="setDate('{{ date_str }}', '{{ slot }}')" required>
-                            {{ slot }}
+                        <label class="time-slot-label" data-clinic-id="{{ slot.clinic_id }}" style="display: none;">
+                            <input type="radio" name="appointment_time" value="{{ slot.time }}" onchange="setDate('{{ date_str }}', '{{ slot.time }}', this)" disabled required>
+                            {{ slot.time }}
                         </label>
                         {% endfor %}
                     </div>
@@ -101,17 +101,55 @@
 </div>
 
 <script>
-function setDate(dateStr, timeStr) {
+function setDate(dateStr, timeStr, element) {
     document.getElementById('selectedDateInput').value = dateStr;
     document.querySelectorAll('.time-slot-label').forEach(function(el) { 
-        el.classList.toggle('selected', el.querySelector('input').value === timeStr); 
+        el.classList.remove('selected'); 
     });
+    element.parentElement.classList.add('selected');
 }
+
+document.querySelectorAll('input[name="clinic_id"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        let selectedClinic = this.value;
+        document.getElementById('selectedDateInput').value = '';
+        
+        let hasSlots = false;
+        
+        document.querySelectorAll('.time-slot-label').forEach(function(label) {
+            label.classList.remove('selected');
+            const input = label.querySelector('input');
+            input.checked = false;
+            
+            if (label.getAttribute('data-clinic-id') === selectedClinic) {
+                label.style.display = 'block';
+                input.disabled = false;
+                hasSlots = true;
+            } else {
+                label.style.display = 'none';
+                input.disabled = true;
+            }
+        });
+        
+        document.querySelectorAll('.date-group').forEach(function(group) {
+            let visibleSlots = Array.from(group.querySelectorAll('.time-slot-label')).filter(l => l.style.display === 'block');
+            group.style.display = visibleSlots.length > 0 ? 'block' : 'none';
+        });
+        
+        document.getElementById('submitBtn').disabled = !hasSlots;
+    });
+});
+
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
     if (!document.getElementById('selectedDateInput').value) { 
         e.preventDefault(); 
         alert('Please select a date and time slot.'); 
     }
 });
+
+const checkedClinic = document.querySelector('input[name="clinic_id"]:checked');
+if (checkedClinic) {
+    checkedClinic.dispatchEvent(new Event('change'));
+}
 </script>
 {% endblock %}

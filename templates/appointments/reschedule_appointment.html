@@ -26,7 +26,7 @@
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">
                 {% for slot in slot_data.slots %}
                 <label class="time-slot-label">
-                    <input type="radio" name="appointment_time" value="{{ slot }}" onchange="setRescheduleSlot('{{ date_str }}', '{{ slot }}')" required>
+                    <input type="radio" name="appointment_time" value="{{ slot }}" onchange="setRescheduleSlot('{{ date_str }}', '{{ slot }}', this)" required>
                     {{ slot }}
                 </label>
                 {% endfor %}
@@ -50,12 +50,18 @@
 }
 .time-slot-label input[type="radio"] { display: none; }
 .time-slot-label:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+.time-slot-label.selected { background: #3b82f6; color: #ffffff; border-color: #3b82f6; }
 </style>
 
 <script>
-function setRescheduleSlot(dateStr, timeStr) {
+function setRescheduleSlot(dateStr, timeStr, element) {
     document.getElementById('selectedDateInput').value = dateStr;
     document.getElementById('selectedTimeInput').value = timeStr;
+    
+    document.querySelectorAll('.time-slot-label').forEach(function(el) { 
+        el.classList.remove('selected'); 
+    });
+    element.parentElement.classList.add('selected');
 }
 document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
     if (!document.getElementById('selectedDateInput').value) {

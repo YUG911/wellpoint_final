@@ -26,7 +26,45 @@
         </div>
     </div>
 
-    <div class="section" style="padding:40px 0;">
+    <div class="section" style="padding:10px 0 20px 0;">
+        <div class="content-card" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:20px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                <div class="feature-icon" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#e0f2fe;color:#0284c7;border-radius:8px;font-size:18px;">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0;font-size:18px;color:#1e293b;">Associate a Doctor</h3>
+                    <p style="margin:2px 0 0 0;color:#64748b;font-size:14px;">Add an approved, active doctor to practice at {{ clinic.clinic_name }}.</p>
+                </div>
+            </div>
+
+            {% if available_doctors %}
+            <form method="post" action="{% url 'add_clinic_doctor' %}" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                {% csrf_token %}
+                <div style="flex:1;min-width:280px;">
+                    <label for="doctor_select" style="display:block;margin-bottom:6px;font-weight:500;font-size:14px;color:#334155;">Select Doctor:</label>
+                    <select name="doctor_id" id="doctor_select" class="form-control" required style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+                        <option value="">-- Choose a verified doctor --</option>
+                        {% for doc in available_doctors %}
+                        <option value="{{ doc.doctor_id }}">
+                            {{ doc.doctor_name }} (Fee: ₹{{ doc.new_patient_fee }}){% if doc.doctor_specialization.all %} - {% for ds in doc.doctor_specialization.all %}{{ ds.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary book-now-btn" style="padding:10px 20px;height:42px;display:inline-flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-plus"></i> Associate Doctor
+                </button>
+            </form>
+            {% else %}
+            <p style="color:#64748b;margin:0;font-size:14px;">
+                <i class="fa-solid fa-circle-info"></i> No unassociated verified doctors currently available to add.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section" style="padding:20px 0 40px 0;">
         <h3>Associated Doctors</h3><p><a href="{% url 'clinic_appointments' %}" class="text-link">Manage Appointments</a></p>
         {% if doctors %}
         <div class="doctors-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">

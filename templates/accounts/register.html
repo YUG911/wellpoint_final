@@ -94,10 +94,10 @@
 
                         <div class="input-wrapper">
                             <i class="fa-solid fa-phone"></i>
-                            {{ form.phone }}
+                            {{ form.contact_number }}
                         </div>
 
-                        {{ form.phone.errors }}
+                        {{ form.contact_number.errors }}
 
                     </div>
 
@@ -183,7 +183,7 @@
                     <label class="terms-check" for="id_terms_accepted">
                         {{ form.terms_accepted }}
                         <span class="custom-checkbox"></span>
-                        <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</span>
+                        <span>I agree to the <a href="#" onclick="alert('Document not available for this demo.'); return false;">Terms of Service</a> and <a href="#" onclick="alert('Document not available for this demo.'); return false;">Privacy Policy</a>.</span>
                     </label>
                     {{ form.terms_accepted.errors }}
 

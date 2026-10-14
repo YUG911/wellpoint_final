@@ -21,8 +21,8 @@ class RegisterForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email address'})
     )
-    phone = forms.IntegerField(
-        widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your phone number'})
+    contact_number = forms.IntegerField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your contact_number number'})
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a strong password'})
@@ -54,11 +54,11 @@ class RegisterForm(forms.Form):
             raise forms.ValidationError("Email already registered.")
         return email
 
-    def clean_phone(self):
-        phone = self.cleaned_data['phone']
-        if User.objects.filter(phone=phone).exists():
+    def clean_contact_number(self):
+        contact_number = self.cleaned_data['contact_number']
+        if User.objects.filter(contact_number=contact_number).exists():
             raise forms.ValidationError("Phone number already registered.")
-        return phone
+        return contact_number
 
 
 class PatientProfileForm(forms.Form):
@@ -130,9 +130,9 @@ class AdminForm(forms.Form):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('full_name', 'phone', 'address')
+        fields = ('full_name', 'contact_number', 'address')
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

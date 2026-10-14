@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 patientName.value.trim();
 
 
-            const phone =
+            const contact_number =
                 patientPhone.value.trim();
 
 
@@ -322,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (
                 name === "" ||
-                phone === "" ||
+                contact_number === "" ||
                 email === "" ||
                 appointmentReason === ""
             ) {
@@ -347,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     name,
 
                 patientPhone:
-                    phone,
+                    contact_number,
 
                 patientEmail:
                     email,

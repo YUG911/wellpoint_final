@@ -29,13 +29,13 @@
                         {{ form.experience.errors }}
                     </div>
 
-                    <div class="form-row" style="display:flex;gap:15px;">
-                        <div class="form-group" style="flex:1;">
+                    <div class="form-row" style="display:flex; flex-wrap:wrap; gap:15px;">
+                        <div class="form-group" style="flex: 1 1 200px;">
                             <label for="id_new_patient_fee">New Patient Fee (₹)</label>
                             {{ form.new_patient_fee }}
                             {{ form.new_patient_fee.errors }}
                         </div>
-                        <div class="form-group" style="flex:1;">
+                        <div class="form-group" style="flex: 1 1 200px;">
                             <label for="id_old_patient_fee">Old Patient Fee (₹)</label>
                             {{ form.old_patient_fee }}
                             {{ form.old_patient_fee.errors }}
