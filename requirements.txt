@@ -7,4 +7,4 @@ numpy==2.5.3
 scipy==1.18.1
 threadpoolctl==3.7.0
 dj-database-url==2.2.0
-PyMySQL==1.1.1
+PyMySQL==1.2.3
