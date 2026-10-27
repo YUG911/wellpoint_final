@@ -16,7 +16,7 @@ class AccountWorkflowTests(TestCase):
         self.city = CityMaster.objects.create(state=self.state, city_name='Test City')
 
     def user(self, role, number, **values):
-        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), contact_number=number, password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'))
+        return User.objects.create(full_name=values.get('full_name', role + ' User'), email=values.get('email', f'{number}@example.test'), contact_number=number, password_hash=make_password('Secret123!'), role=self.roles[role], account_status=values.get('account_status', 'active'), is_verified=values.get('is_verified', False))
 
     def login_as(self, user):
         session = self.client.session
@@ -148,3 +148,16 @@ class AccountWorkflowTests(TestCase):
         login_res = self.client.post(reverse('login'), {'email': staff_user.email, 'password': 'Secret123!'})
         self.assertEqual(login_res.status_code, 200)
         self.assertContains(login_res, 'pending administrative verification')
+
+    def test_clinic_appointments_profile_check(self):
+        # A clinic user without a completed Clinic profile is redirected cleanly
+        unprofiled_clinic_user = self.user('Clinic', 9000000016, is_verified=True)
+        self.login_as(unprofiled_clinic_user)
+        response = self.client.get(reverse('clinic_appointments'))
+        self.assertRedirects(response, reverse('register_clinic'))
+
+        # A staff user without a completed ClinicStaff profile is redirected cleanly
+        unprofiled_staff_user = self.user('Clinic Staff', 9000000017, is_verified=True)
+        self.login_as(unprofiled_staff_user)
+        response_staff = self.client.get(reverse('clinic_appointments'))
+        self.assertRedirects(response_staff, reverse('register_staff'))

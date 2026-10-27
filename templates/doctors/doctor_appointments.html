@@ -40,9 +40,12 @@
                     <td style="padding:12px;">{{ appt.status }}</td>
                     <td style="padding:12px;"><a href="{% url 'doctor_appointment_detail' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Details</a>
                         {% if appt.status == 'Pending' %}
-                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;background:#dcfce7;color:#16a34a;">Complete</a>
+                        <a href="{% url 'confirm_appointment' appt.appointment_id %}" class="view-profile" style="margin-right:8px;background:#dbeafe;color:#1d4ed8;">Confirm</a>
+                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;background:#dcfce7;color:#16a34a;">Conduct</a>
+                        {% elif appt.status == 'Confirmed' %}
+                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;background:#dcfce7;color:#16a34a;">Conduct</a>
                         {% else %}
-                        {% if not appt.record %}
+                        {% if not appt.record and appt.status != 'Cancelled' %}
                         <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Add Record</a>
                         {% endif %}
                         {% endif %}

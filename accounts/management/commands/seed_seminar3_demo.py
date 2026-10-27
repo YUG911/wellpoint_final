@@ -78,7 +78,8 @@ class Command(BaseCommand):
             self.first_or_create(DoctorClinic, doctor=doctor, clinic=clinic)
             self.first_or_create(DoctorSpecialization, doctor=doctor, specialization=specs[spec])
             self.first_or_create(DoctorQualification, doctor=doctor, qualification=qualifications[qualification])
-            self.first_or_create(DoctorAvailability, doctor=doctor, clinic=clinic, day=days['Monday'], start_time='10:00', end_time='13:00')
+            for d_name in ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'):
+                self.first_or_create(DoctorAvailability, doctor=doctor, clinic=clinic, day=days[d_name], start_time='10:00', end_time='16:00')
             doctors.append((doctor, clinic))
 
         patient_user = self.user(roles['Patient'], 'demo.patient@wellpoint.test', 9100003001, 'Demo Patient')

@@ -61,7 +61,7 @@
                     <h3>{{ appt.doctor.doctor_name }}</h3>
                     <p>{{ appt.appointment_date }} at {{ appt.appointment_time }}</p>
                     <span class="available-badge">Completed</span>
-                    {% if appt.appointment_status == 'Completed' and appt.status == 'Completed' %}
+                    {% if appt.status == 'Completed' %}
                     {% if not appt.review %}
                     <a href="{% url 'submit_review' appt.appointment_id %}" class="book-appointment" style="margin-top:10px;">Write Review</a>
                     {% endif %}

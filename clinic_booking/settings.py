@@ -20,21 +20,42 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from django.core.exceptions import ImproperlyConfigured
+
+# Detect production / serverless environment (e.g. Vercel)
+IS_PRODUCTION = (
+    os.environ.get('VERCEL') == '1'
+    or os.environ.get('VERCEL_ENV') in ('production', 'preview')
+    or os.environ.get('DJANGO_ENV') == 'production'
+    or os.environ.get('ENVIRONMENT') == 'production'
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-replace-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if IS_PRODUCTION:
+        raise ImproperlyConfigured(
+            "SECRET_KEY environment variable is not configured. "
+            "A secure SECRET_KEY must be provided in production environment variables."
+        )
+    SECRET_KEY = 'django-insecure-default-key-replace-in-production'
+elif IS_PRODUCTION and SECRET_KEY == 'django-insecure-default-key-replace-in-production':
+    raise ImproperlyConfigured(
+        "Default insecure SECRET_KEY detected in production. "
+        "Please provide a secure, unique SECRET_KEY in production environment variables."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '.vercel.app', 'wellpoint-tau.vercel.app']
-env_allowed_hosts = os.environ.get('ALLOWED_HOSTS')
-if env_allowed_hosts:
-    for host in env_allowed_hosts.split(','):
-        host = host.strip()
+raw_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS') or os.environ.get('ALLOWED_HOSTS')
+if raw_allowed_hosts:
+    for host in raw_allowed_hosts.replace(',', ' ').split():
+        host = host.strip(' "\'').strip()
         if host and host not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(host)
 
@@ -102,15 +123,57 @@ WSGI_APPLICATION = 'clinic_booking.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-import dj_database_url
+database_url = os.environ.get('DATABASE_URL')
+mysql_host = os.environ.get('MYSQL_HOST')
+mysql_database = os.environ.get('MYSQL_DATABASE')
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600
+if database_url:
+    # 1. Primary: DATABASE_URL connection string (MySQL, PostgreSQL, etc.)
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            env='DATABASE_URL',
+            conn_max_age=600,
+        )
+    }
+elif mysql_host or mysql_database:
+    # 2. Discrete MySQL environment variables (Vercel production shared variables)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': mysql_database or '',
+            'USER': os.environ.get('MYSQL_USER', ''),
+            'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'HOST': mysql_host or 'localhost',
+            'PORT': str(os.environ.get('MYSQL_PORT', '3306')),
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
+elif IS_PRODUCTION:
+    # 3. Fail fast in production with a clear error rather than silently using ephemeral SQLite
+    raise ImproperlyConfigured(
+        "Production database configuration is missing. "
+        "Please configure MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, and MYSQL_PASSWORD "
+        "(or DATABASE_URL) in Vercel environment variables. "
+        "SQLite cannot be used in serverless production as file writes do not persist."
     )
-}
-
+else:
+    # 4. Safe local development fallback
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+    options = DATABASES['default'].setdefault('OPTIONS', {})
+    options.pop('ssl-mode', None)
+    options.pop('ssl_mode', None)
+    options['ssl'] = {'check_hostname': False}
+    options.setdefault('charset', 'utf8mb4')
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators

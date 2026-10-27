@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div class="section" style="padding:40px 0;">
+    <div class="section" style="padding:40px 0 20px 0;">
         <div class="section-top">
             <div><h3>Today's Appointments</h3></div>
             <a href="{% url 'doctor_appointments' %}" class="text-link">View All <i class="fa-solid fa-arrow-right"></i></a>
@@ -41,6 +41,7 @@
             <thead>
                 <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
                     <th style="padding:12px;text-align:left;">Patient</th>
+                    <th style="padding:12px;text-align:left;">Clinic</th>
                     <th style="padding:12px;text-align:left;">Time</th>
                     <th style="padding:12px;text-align:left;">Status</th>
                     <th style="padding:12px;text-align:left;">Actions</th>
@@ -50,26 +51,76 @@
                 {% for appt in todays_appointments %}
                 <tr style="border-bottom:1px solid #e2e8f0;">
                     <td style="padding:12px;">{{ appt.patient.user.full_name }}</td>
-                    <td style="padding:12px;">{{ appt.appointment_time }}</td>
-                    <td style="padding:12px;">{{ appt.status }}</td>
+                    <td style="padding:12px;">{{ appt.clinic.clinic_name }}</td>
+                    <td style="padding:12px;">{{ appt.appointment_time|time:"H:i" }}</td>
+                    <td style="padding:12px;">
+                        <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;{% if appt.status == 'Confirmed' %}background:#dcfce7;color:#16a34a;{% elif appt.status == 'Pending' %}background:#fef3c7;color:#d97706;{% else %}background:#f1f5f9;color:#64748b;{% endif %}">{{ appt.status }}</span>
+                    </td>
                     <td style="padding:12px;">
                         {% if appt.status == 'Pending' %}
-                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:8px;">Conduct</a>
-                        {% else %}
-                        <span style="color:#64748b;">-</span>
+                        <a href="{% url 'confirm_appointment' appt.appointment_id %}" class="view-profile" style="margin-right:6px;background:#dbeafe;color:#1d4ed8;">Confirm</a>
+                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:6px;background:#dcfce7;color:#16a34a;">Conduct</a>
+                        {% elif appt.status == 'Confirmed' %}
+                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:6px;background:#dcfce7;color:#16a34a;">Conduct</a>
                         {% endif %}
+                        <a href="{% url 'doctor_appointment_detail' appt.appointment_id %}" class="view-profile">Details</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <div class="card shadow-sm border-0 mt-4 text-center p-5 bg-light rounded" style="background-color: #f8fafc !important;">
+        <div class="card shadow-sm border-0 mt-3 text-center p-4 bg-light rounded" style="background-color: #f8fafc !important;">
             <div class="card-body">
-                <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 3rem; color: #94a3b8 !important;"></i>
-                <h4 class="text-muted" style="color: #64748b !important;">No Appointments Today</h4>
-                <p class="text-muted mb-0" style="color: #64748b !important;">You have no appointments scheduled for today.</p>
+                <i class="fas fa-calendar-check text-muted mb-2" style="font-size: 2.2rem; color: #94a3b8 !important;"></i>
+                <h4 class="text-muted" style="color: #64748b !important; font-size:16px;">No Appointments Today</h4>
+                <p class="text-muted mb-0" style="color: #94a3b8 !important; font-size:13px;">You have no patient appointments scheduled for today.</p>
             </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="section" style="padding:20px 0 40px 0;">
+        <div class="section-top">
+            <div><h3>Upcoming &amp; Pending Appointments</h3></div>
+            <a href="{% url 'doctor_appointments' %}" class="text-link">View All <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        {% if upcoming_appointments %}
+        <table class="dashboard-table" style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                    <th style="padding:12px;text-align:left;">Patient</th>
+                    <th style="padding:12px;text-align:left;">Clinic</th>
+                    <th style="padding:12px;text-align:left;">Date</th>
+                    <th style="padding:12px;text-align:left;">Time</th>
+                    <th style="padding:12px;text-align:left;">Status</th>
+                    <th style="padding:12px;text-align:left;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appt in upcoming_appointments %}
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:12px;"><strong>{{ appt.patient.user.full_name }}</strong></td>
+                    <td style="padding:12px;">{{ appt.clinic.clinic_name }}</td>
+                    <td style="padding:12px;">{{ appt.appointment_date }}</td>
+                    <td style="padding:12px;">{{ appt.appointment_time|time:"H:i" }}</td>
+                    <td style="padding:12px;">
+                        <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;{% if appt.status == 'Confirmed' %}background:#dcfce7;color:#16a34a;{% elif appt.status == 'Pending' %}background:#fef3c7;color:#d97706;{% else %}background:#f1f5f9;color:#64748b;{% endif %}">{{ appt.status }}</span>
+                    </td>
+                    <td style="padding:12px;">
+                        {% if appt.status == 'Pending' %}
+                        <a href="{% url 'confirm_appointment' appt.appointment_id %}" class="view-profile" style="margin-right:6px;background:#dbeafe;color:#1d4ed8;">Confirm</a>
+                        {% endif %}
+                        <a href="{% url 'add_record' appt.appointment_id %}" class="view-profile" style="margin-right:6px;background:#dcfce7;color:#16a34a;">Conduct</a>
+                        <a href="{% url 'doctor_appointment_detail' appt.appointment_id %}" class="view-profile">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="card shadow-sm border-0 mt-3 text-center p-4 bg-light rounded" style="background-color: #f8fafc !important;">
+            <p class="text-muted mb-0" style="color: #64748b !important;">No upcoming appointments found.</p>
         </div>
         {% endif %}
     </div>

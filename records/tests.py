@@ -93,3 +93,12 @@ class RecordWorkflowTests(TestCase):
         res_xss = self.client.post(reverse('staff_upload_report', args=[self.appointment.pk]), {'report_name': 'XSS', 'file': xss_txt})
         self.assertEqual(res_xss.status_code, 200)
         self.assertContains(res_xss, 'Invalid text file content')
+
+    def test_upload_report_default_name(self):
+        self.session_user(self.staff.user)
+        report_file = SimpleUploadedFile('scan.pdf', b'%PDF-1.4 sample diagnostic report')
+        # Empty report_name falls back to default
+        res = self.client.post(reverse('staff_upload_report', args=[self.appointment.pk]), {'report_name': '   ', 'file': report_file})
+        self.assertRedirects(res, reverse('staff_dashboard'))
+        report = Report.objects.filter(appointment=self.appointment).latest('report_id')
+        self.assertEqual(report.report_name, 'Medical Report')

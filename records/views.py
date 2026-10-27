@@ -61,15 +61,19 @@ def add_record(request, appointment_id):
     if request.method == 'POST':
         diagnosis = request.POST.get('diagnosis', '')
         notes = request.POST.get('notes', '')
-        PatientRecord.objects.create(
-            patient=patient, doctor=doctor, appointment=appointment,
-            diagnosis=diagnosis, notes=notes
+        PatientRecord.objects.update_or_create(
+            appointment=appointment,
+            defaults={
+                'patient': patient,
+                'doctor': doctor,
+                'diagnosis': diagnosis,
+                'notes': notes,
+            }
         )
         appointment.status = 'Completed'
         appointment.save()
-        Prescription.objects.create(
-            appointment=appointment, uploaded_by=user, file_path=''
-        ) if not Prescription.objects.filter(appointment=appointment).exists() else None
+        if not Prescription.objects.filter(appointment=appointment).exists():
+            Prescription.objects.create(appointment=appointment, uploaded_by=user, file_path='')
         messages.success(request, "Record added. Appointment marked as Completed.")
         return redirect('doctor_appointments')
 
@@ -146,7 +150,7 @@ def upload_report(request, appointment_id):
         Appointment, appointment_id=appointment_id, clinic__clinicstaff__user=user
     )
     if request.method == 'POST':
-        report_name = request.POST.get('report_name', '').strip()
+        report_name = request.POST.get('report_name', '').strip() or 'Medical Report'
         uploaded_file = request.FILES.get('file')
         is_valid, err, safe_name = validate_uploaded_file(uploaded_file)
         if not is_valid:

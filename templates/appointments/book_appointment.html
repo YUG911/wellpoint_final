@@ -44,7 +44,7 @@
             <div class="radio-group">
                 {% for c in clinics %}
                 <label class="radio-item">
-                    <input type="radio" name="clinic_id" value="{{ c.clinic.clinic_id }}" required>
+                    <input type="radio" name="clinic_id" value="{{ c.clinic.clinic_id }}" {% if forloop.first %}checked{% endif %} required>
                     <span>{{ c.clinic.clinic_name }}</span>
                 </label>
                 {% empty %}
@@ -147,9 +147,16 @@ document.getElementById('bookingForm').addEventListener('submit', function(e) {
     }
 });
 
-const checkedClinic = document.querySelector('input[name="clinic_id"]:checked');
-if (checkedClinic) {
-    checkedClinic.dispatchEvent(new Event('change'));
+function updateClinicSlots() {
+    const checkedClinic = document.querySelector('input[name="clinic_id"]:checked');
+    if (checkedClinic) {
+        checkedClinic.dispatchEvent(new Event('change'));
+    }
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateClinicSlots);
+} else {
+    updateClinicSlots();
 }
 </script>
 {% endblock %}

@@ -110,7 +110,11 @@
                                     {% endfor %}
                                 </p>
                             </div>
+                            {% if doctor.doctor_clinic.exists and doctor.doctoravailability_set.exists %}
                             <span class="available-badge"><span></span> Available</span>
+                            {% else %}
+                            <span class="available-badge" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1;"><i class="fa-solid fa-clock"></i> No Slots</span>
+                            {% endif %}
                         </div>
                         <div class="doctor-details">
                             <span><i class="fa-solid fa-briefcase-medical"></i> {{ doctor.experience|default:'0' }} Years Experience</span>
@@ -122,10 +126,12 @@
                             <div class="fee"><span>Consultation Fee</span><strong>&#8377;{{ doctor.new_patient_fee }}</strong></div>
                             <div class="doctor-actions">
                                 <a href="{% url 'doctor_detail' doctor.doctor_id %}" class="view-profile">View Profile</a>
-                                {% if current_user %}
-                                <a href="{% url 'book_appointment' doctor.doctor_id %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
-                                {% else %}
-                                <a href="{% url 'login' %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                                {% if doctor.doctor_clinic.exists and doctor.doctoravailability_set.exists %}
+                                    {% if current_user %}
+                                    <a href="{% url 'book_appointment' doctor.doctor_id %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                                    {% else %}
+                                    <a href="{% url 'login' %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>

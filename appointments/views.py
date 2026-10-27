@@ -30,27 +30,33 @@ def book_appointment(request, doctor_id):
         symptoms = request.POST.get('symptoms', '')
         patient_type = request.POST.get('patient_type', 'New')
 
+        clinic = None
         if clinic_id:
-            clinic = get_object_or_404(Clinic, clinic_id=clinic_id, doctorclinic__doctor=doctor)
+            try:
+                clinic_id_int = int(clinic_id)
+                clinic = Clinic.objects.filter(clinic_id=clinic_id_int, doctorclinic__doctor=doctor).first()
+            except (ValueError, TypeError):
+                clinic = None
         elif clinics:
             clinic = clinics[0].clinic
-        else:
-            messages.error(request, "This doctor is not currently associated with a clinic.")
-            return redirect('doctor_detail', doctor_id=doctor_id)
+
+        if not clinic:
+            if clinics.exists():
+                clinic = clinics[0].clinic
+            else:
+                messages.error(request, "This doctor is not currently associated with a clinic.")
+                return redirect('doctor_detail', doctor_id=doctor_id)
 
         try:
             selected_date = datetime.strptime(appointment_date, '%Y-%m-%d').date()
             selected_time = datetime.strptime(appointment_time, '%H:%M').time()
         except (TypeError, ValueError):
-            print("VALIDATION FAIL: Invalid date format")
             messages.warning(request, "Please choose a valid available date and time.")
             return redirect('book_appointment', doctor_id=doctor_id)
         if selected_date < timezone.localdate() or (selected_date == timezone.localdate() and selected_time <= timezone.localtime().time()):
-            print("VALIDATION FAIL: Past date")
             messages.warning(request, "Please choose a future appointment time.")
             return redirect('book_appointment', doctor_id=doctor_id)
         if not DoctorAvailability.objects.filter(doctor=doctor, clinic=clinic, day__day_name__iexact=selected_date.strftime('%A'), start_time__lte=selected_time, end_time__gt=selected_time).exists():
-            print("VALIDATION FAIL: Slot not available")
             messages.warning(request, "That time is not available at the selected clinic.")
             return redirect('book_appointment', doctor_id=doctor_id)
         # Double-booking check
@@ -58,7 +64,6 @@ def book_appointment(request, doctor_id):
             doctor=doctor, appointment_date=selected_date,
             appointment_time=selected_time, status__in=['Pending', 'Confirmed']
         ).exists():
-            print("VALIDATION FAIL: Double booked")
             messages.warning(request, "This time slot is already booked. Please select another.")
             return redirect('book_appointment', doctor_id=doctor_id)
 
@@ -99,7 +104,8 @@ def book_appointment(request, doctor_id):
         return redirect('appointment_confirmation', appointment_id=appointment.appointment_id)
 
     # Get available slots
-    today = datetime.now().date()
+    today = timezone.localdate()
+    now_time = timezone.localtime().time()
     next_14_days = [today + timedelta(days=i) for i in range(14)]
     availabilities = DoctorAvailability.objects.filter(doctor=doctor).select_related('day', 'clinic')
 
@@ -130,6 +136,9 @@ def book_appointment(request, doctor_id):
             interval = timedelta(minutes=30)
             while current < end_dt:
                 slot_time = current.time().strftime('%H:%M')
+                if d == today and current.time() <= now_time:
+                    current += interval
+                    continue
                 already_booked = any(
                     b[0] == d and b[1] == current.time()
                     for b in booked
@@ -242,7 +251,8 @@ def reschedule_appointment(request, appointment_id):
         messages.success(request, "Appointment rescheduled successfully.")
         return redirect('my_appointments')
 
-    today = datetime.now().date()
+    today = timezone.localdate()
+    now_time = timezone.localtime().time()
     availabilities = DoctorAvailability.objects.filter(doctor=doctor, clinic=appointment.clinic).select_related('day', 'clinic')
 
     available_slots = {}
@@ -262,6 +272,9 @@ def reschedule_appointment(request, appointment_id):
                 interval = timedelta(minutes=30)
                 while current < end_dt:
                     slot_time = current.time().strftime('%H:%M')
+                    if d == today and current.time() <= now_time:
+                        current += interval
+                        continue
                     already_booked = Appointment.objects.filter(
                         doctor=doctor, appointment_date=d,
                         appointment_time=current.time()

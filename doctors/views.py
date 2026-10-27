@@ -9,8 +9,11 @@ from appointments.models import Appointment
 
 
 import os
+import logging
 from django.conf import settings
 import joblib
+
+logger = logging.getLogger(__name__)
 
 def doctor_list(request):
     search = request.GET.get('search', '')
@@ -27,7 +30,7 @@ def doctor_list(request):
             # Override specialization with the predicted one
             specialization = predicted_specialization
         except Exception as e:
-            print("ML Prediction Error:", e)
+            logger.warning("ML Prediction Error: %s", e)
 
     doctors = Doctor.objects.all()
     if search:
@@ -178,3 +181,15 @@ def doctor_appointment_detail(request, appointment_id):
     doctor = get_object_or_404(Doctor, user=current_user(request))
     appointment = get_object_or_404(Appointment.objects.select_related('patient__user', 'clinic'), appointment_id=appointment_id, doctor=doctor)
     return render(request, 'doctors/doctor_appointment_detail.html', {'doctor': doctor, 'appointment': appointment})
+
+
+@login_required
+@role_required('doctor')
+def confirm_appointment(request, appointment_id):
+    doctor = get_object_or_404(Doctor, user=current_user(request))
+    appointment = get_object_or_404(Appointment, appointment_id=appointment_id, doctor=doctor)
+    if appointment.status == 'Pending':
+        appointment.status = 'Confirmed'
+        appointment.save()
+        messages.success(request, f"Appointment #{appointment.appointment_id} has been confirmed.")
+    return redirect(request.META.get('HTTP_REFERER') or 'doctor_dashboard')

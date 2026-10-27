@@ -164,3 +164,17 @@ class AppointmentWorkflowTests(TestCase):
         self.assertRedirects(res, reverse('reschedule_appointment', args=[appt1.pk]))
         appt1.refresh_from_db()
         self.assertEqual(str(appt1.appointment_time), '10:00:00')
+
+    def test_booking_with_invalid_clinic_id_falls_back(self):
+        # Passing invalid or non-numeric clinic_id gracefully falls back to the doctor's clinic
+        res = self.client.post(reverse('book_appointment', args=[self.doctor.pk]), {
+            'clinic_id': 'invalid_id',
+            'appointment_date': self.day_date.isoformat(),
+            'appointment_time': '10:00',
+            'patient_type': 'New',
+            'symptoms': 'Test'
+        })
+        self.assertEqual(Appointment.objects.count(), 1)
+        appt = Appointment.objects.get()
+        self.assertRedirects(res, reverse('appointment_confirmation', args=[appt.pk]))
+        self.assertEqual(appt.clinic, self.clinic)

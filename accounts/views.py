@@ -21,7 +21,12 @@ def home(request):
     if redirect_url:
         return redirect(redirect_url)
     from doctors.models import Doctor, SpecializationMaster
-    doctors = Doctor.objects.all()[:3]
+    doctors = Doctor.objects.filter(
+        user__account_status__iexact='active',
+        user__is_verified=True,
+        doctor_clinic__isnull=False,
+        doctoravailability__isnull=False
+    ).distinct()[:3]
     specializations_list = SpecializationMaster.objects.all()
     return render(request, 'home.html', {
         'doctors': doctors,
@@ -218,17 +223,15 @@ def register_staff(request):
     redirect_url = redirect_based_on_role(request)
     if redirect_url:
         return redirect(redirect_url)
-    user_id = request.session.get('reg_user_id')
-    reg_role = request.session.get('reg_role')
-    if not user_id or (reg_role and reg_role.lower() != 'clinic staff'):
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
+    user = None
+    if user_id:
+        user = User.objects.filter(user_id=user_id).first()
+    if not user or user.role.role_name.lower() != 'clinic staff':
         messages.error(request, "Please register as Clinic Staff first.")
         return redirect('register')
     if request.method == 'POST':
         clinic_id = request.POST.get('clinic')
-        user = get_object_or_404(User, user_id=user_id)
-        if user.role.role_name.lower() != 'clinic staff':
-            messages.error(request, "User is not authorized for staff registration.")
-            return redirect('register')
         clinic = get_object_or_404(Clinic, clinic_id=clinic_id)
         ClinicStaff.objects.create(user=user, clinic=clinic)
         if 'reg_user_id' in request.session:
@@ -286,13 +289,16 @@ def doctor_dashboard(request):
         messages.warning(request, 'Please complete your doctor profile.')
         return redirect('register_doctor')
 
-    today = date.today()
-    todays_appointments = Appointment.objects.filter(doctor=doctor, appointment_date=today)
+    from django.utils import timezone
+    today = timezone.localdate()
+    todays_appointments = Appointment.objects.filter(
+        doctor=doctor, appointment_date=today
+    ).select_related('patient__user', 'clinic').order_by('appointment_time')
     upcoming = Appointment.objects.filter(
         doctor=doctor,
         appointment_date__gte=today,
         status__in=['Pending', 'Confirmed']
-    )
+    ).select_related('patient__user', 'clinic').order_by('appointment_date', 'appointment_time')
     completed = Appointment.objects.filter(doctor=doctor, status='Completed')
     reviews = Review.objects.filter(doctor=doctor)
 
@@ -303,7 +309,7 @@ def doctor_dashboard(request):
     context = {
         'doctor': doctor,
         'todays_appointments': todays_appointments,
-        'upcoming_appointments': upcoming[:5],
+        'upcoming_appointments': upcoming[:10],
         'total_appointments': Appointment.objects.filter(doctor=doctor).count(),
         'completed_count': completed.count(),
         'avg_rating': round(total_rating, 1),
@@ -511,7 +517,23 @@ def verification_history(request):
 @role_required('clinic', 'clinic staff')
 def clinic_appointments(request):
     user = current_user(request)
-    clinic = Clinic.objects.filter(user=user).first() or get_object_or_404(ClinicStaff, user=user).clinic
+    role = user.role.role_name.lower()
+    clinic = None
+    if role == 'clinic':
+        clinic = Clinic.objects.filter(user=user).first()
+        if not clinic:
+            messages.warning(request, 'Please complete your clinic profile.')
+            return redirect('register_clinic')
+    elif role == 'clinic staff':
+        staff = ClinicStaff.objects.filter(user=user).first()
+        if not staff:
+            messages.warning(request, 'Please complete your staff profile.')
+            return redirect('register_staff')
+        clinic = staff.clinic
+    else:
+        messages.error(request, 'Unauthorized.')
+        return redirect('home')
+
     appointments = Appointment.objects.filter(clinic=clinic).select_related('patient__user', 'doctor').order_by('-appointment_date', '-appointment_time')
     return render(request, 'accounts/clinic_appointments.html', {'clinic': clinic, 'appointments': appointments})
 
@@ -552,7 +574,8 @@ def redirect_based_on_role(request):
     user_id = request.session.get('user_id')
     if not user_id:
         return None
-    from accounts.models import User
+    from accounts.models import User, Patient, Clinic, ClinicStaff
+    from doctors.models import Doctor
     try:
         user = User.objects.select_related('role').get(user_id=user_id)
         if user.account_status.lower() != 'active':
@@ -560,11 +583,16 @@ def redirect_based_on_role(request):
         role = user.role.role_name.lower()
         if role in {'doctor', 'clinic', 'clinic staff'} and not user.is_verified:
             return None
-        if role == 'patient': return 'patient_dashboard'
-        if role == 'doctor': return 'doctor_dashboard'
-        if role == 'clinic': return 'clinic_dashboard'
-        if role == 'clinic staff': return 'staff_dashboard'
-        if role == 'admin': return 'admin_dashboard'
-    except:
+        if role == 'patient':
+            return 'patient_dashboard' if Patient.objects.filter(user=user).exists() else None
+        if role == 'doctor':
+            return 'doctor_dashboard' if Doctor.objects.filter(user=user).exists() else None
+        if role == 'clinic':
+            return 'clinic_dashboard' if Clinic.objects.filter(user=user).exists() else None
+        if role == 'clinic staff':
+            return 'staff_dashboard' if ClinicStaff.objects.filter(user=user).exists() else None
+        if role == 'admin':
+            return 'admin_dashboard'
+    except Exception:
         pass
     return None
