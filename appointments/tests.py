@@ -178,3 +178,30 @@ class AppointmentWorkflowTests(TestCase):
         appt = Appointment.objects.get()
         self.assertRedirects(res, reverse('appointment_confirmation', args=[appt.pk]))
         self.assertEqual(appt.clinic, self.clinic)
+
+    def test_booking_with_compound_selected_slot(self):
+        # Test submitting selected_slot format: 'YYYY-MM-DD|HH:MM|clinic_id'
+        slot_value = f"{self.day_date.isoformat()}|10:00|{self.clinic.pk}"
+        res = self.client.post(reverse('book_appointment', args=[self.doctor.pk]), {
+            'selected_slot': slot_value,
+            'clinic_id': self.clinic.pk,
+            'patient_type': 'New',
+            'symptoms': 'Testing compound slot format'
+        })
+        self.assertEqual(Appointment.objects.count(), 1)
+        appt = Appointment.objects.get()
+        self.assertRedirects(res, reverse('appointment_confirmation', args=[appt.pk]))
+        self.assertEqual(appt.appointment_date, self.day_date)
+        self.assertEqual(str(appt.appointment_time), '10:00:00')
+        self.assertEqual(appt.clinic, self.clinic)
+
+    def test_reschedule_with_compound_selected_slot(self):
+        self.book(when='10:00')
+        appt = Appointment.objects.get()
+        new_slot_value = f"{self.day_date.isoformat()}|10:30|{self.clinic.pk}"
+        res = self.client.post(reverse('reschedule_appointment', args=[appt.pk]), {
+            'selected_slot': new_slot_value
+        })
+        self.assertRedirects(res, reverse('my_appointments'))
+        appt.refresh_from_db()
+        self.assertEqual(str(appt.appointment_time), '10:30:00')

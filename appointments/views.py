@@ -27,8 +27,19 @@ def book_appointment(request, doctor_id):
         clinic_id = request.POST.get('clinic_id')
         appointment_date = request.POST.get('appointment_date')
         appointment_time = request.POST.get('appointment_time')
+        selected_slot = request.POST.get('selected_slot')
         symptoms = request.POST.get('symptoms', '')
         patient_type = request.POST.get('patient_type', 'New')
+
+        if selected_slot and '|' in selected_slot:
+            parts = [p.strip() for p in selected_slot.split('|')]
+            if len(parts) >= 2:
+                if not appointment_date:
+                    appointment_date = parts[0]
+                if not appointment_time:
+                    appointment_time = parts[1]
+                if len(parts) >= 3 and not clinic_id:
+                    clinic_id = parts[2]
 
         clinic = None
         if clinic_id:
@@ -201,6 +212,15 @@ def reschedule_appointment(request, appointment_id):
     if request.method == 'POST':
         new_date = request.POST.get('appointment_date')
         new_time = request.POST.get('appointment_time')
+        selected_slot = request.POST.get('selected_slot')
+
+        if selected_slot and '|' in selected_slot:
+            parts = [p.strip() for p in selected_slot.split('|')]
+            if len(parts) >= 2:
+                if not new_date:
+                    new_date = parts[0]
+                if not new_time:
+                    new_time = parts[1]
 
         try:
             selected_date = datetime.strptime(new_date, '%Y-%m-%d').date()

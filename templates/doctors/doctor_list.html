@@ -12,7 +12,7 @@
             <h1>Find the Right Doctor<span> for Your Health.</span></h1>
             <p>Search trusted doctors, explore specialties, and book appointments with ease.</p>
         </div>
-        <form class="search-box" method="get">
+        <form class="search-box" method="get" id="searchForm">
             <div class="search-input">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="searchInput" name="search" placeholder="Search doctor or specialization" value="{{ request.GET.search|default:'' }}">
@@ -22,10 +22,16 @@
                 <i class="fa-solid fa-notes-medical"></i>
                 <input type="text" id="symptomsInput" name="symptoms" placeholder="Not sure? Describe symptoms" value="{{ symptoms_query|default:'' }}">
             </div>
-            <div class="location-input">
+            <div class="location-input" style="position: relative;">
                 <i class="fa-solid fa-location-dot"></i>
-                <input type="text" id="locationInput" name="location" placeholder="Enter location" value="{{ request.GET.location|default:'' }}">
+                <input type="text" id="locationInput" name="location" placeholder="Enter city or use location" value="{{ request.GET.location|default:'' }}" {% if has_user_location %}data-geolocated="true"{% endif %}>
+                <button type="button" id="useLocationBtn" class="use-location-btn" title="Use my current location" aria-label="Use my current location">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <span class="location-btn-text">Near Me</span>
+                </button>
             </div>
+            <input type="hidden" name="user_lat" id="userLatInput" value="{{ user_lat|default:'' }}">
+            <input type="hidden" name="user_lng" id="userLngInput" value="{{ user_lng|default:'' }}">
             <div class="location-input">
                 <i class="fa-solid fa-stethoscope"></i>
                 <select name="specialization" aria-label="Specialization" style="width:100%;border:0;outline:0;background:transparent;">
@@ -83,6 +89,17 @@
                 </div>
             </div>
             {% endif %}
+            {% if has_user_location %}
+            <div class="location-banner" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 18px; border-radius:10px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-location-crosshairs" style="color:#2563eb; font-size:16px;"></i>
+                    <span>Showing eligible doctors ordered by proximity to your current location.</span>
+                </div>
+                <a href="{% url 'doctor_list' %}" style="color:#2563eb; font-weight:600; text-decoration:none; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-xmark"></i> Clear Location
+                </a>
+            </div>
+            {% endif %}
             <div class="results-header">
                 <div>
                     <p class="results-label">AVAILABLE DOCTORS</p>
@@ -95,6 +112,7 @@
                     data-name="{{ doctor.doctor_name|lower }}"
                     data-experience="{{ doctor.experience|default:0 }}"
                     data-fee="{{ doctor.new_patient_fee }}"
+                    data-distance="{{ doctor.distance_km|default:'' }}"
                     data-specialization="{% for ds in doctor.doctor_specialization.all %}{{ ds.specialization.specialization_name|lower }} {% endfor %}"
                     data-location="{% for dc in doctor.doctor_clinic.all %}{{ dc.clinic.city.city_name|lower }} {% endfor %}">
                     <div class="doctor-image">
@@ -120,6 +138,9 @@
                             <span><i class="fa-solid fa-briefcase-medical"></i> {{ doctor.experience|default:'0' }} Years Experience</span>
                             {% if doctor.doctor_clinic.first %}
                             <span><i class="fa-solid fa-hospital"></i> {{ doctor.doctor_clinic.first.clinic.clinic_name }}</span>
+                            {% endif %}
+                            {% if doctor.distance_km is not None %}
+                            <span class="distance-badge" style="color: #2563eb; font-weight: 600;"><i class="fa-solid fa-route"></i> {{ doctor.distance_km }} km away{% if doctor.nearest_clinic and doctor.nearest_clinic != doctor.doctor_clinic.first.clinic %} ({{ doctor.nearest_clinic.clinic_name }}){% endif %}</span>
                             {% endif %}
                         </div>
                         <div class="doctor-bottom">

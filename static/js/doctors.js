@@ -8,6 +8,19 @@ const searchInput =
 const locationInput =
     document.getElementById("locationInput");
 
+const useLocationBtn =
+    document.getElementById("useLocationBtn");
+
+const userLatInput =
+    document.getElementById("userLatInput");
+
+const userLngInput =
+    document.getElementById("userLngInput");
+
+const searchForm =
+    document.getElementById("searchForm") ||
+    document.querySelector(".search-box");
+
 const searchButton =
     document.getElementById("searchButton");
 
@@ -131,9 +144,16 @@ function filterDoctors() {
                 .includes(searchValue);
 
 
-        // LOCATION MATCH
+        // LOCATION MATCH (Respects geolocation and manual city filters)
+
+        const isGeolocated = (userLatInput && userLatInput.value !== "" && userLngInput && userLngInput.value !== "") ||
+                             (locationInput && (locationInput.dataset.geolocated === "true" ||
+                                                locationValue === "current location" ||
+                                                locationValue === "my location"));
 
         const matchesLocation =
+            isGeolocated ||
+            locationValue === "" ||
             location.includes(locationValue);
 
 
@@ -362,6 +382,10 @@ function resetAll() {
 
     locationInput.value = "";
 
+    if (userLatInput) userLatInput.value = "";
+    if (userLngInput) userLngInput.value = "";
+    if (locationInput) delete locationInput.dataset.geolocated;
+
 
     // Clear checkboxes
 
@@ -395,6 +419,85 @@ function resetAll() {
 
     filterDoctors();
 
+}
+
+
+// =========================
+// REAL-TIME GEOLOCATION
+// =========================
+
+if (useLocationBtn) {
+    useLocationBtn.addEventListener("click", function () {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser. Please enter your city manually in the search box.");
+            return;
+        }
+
+        const originalHTML = useLocationBtn.innerHTML;
+        useLocationBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="location-btn-text">Locating...</span>';
+        useLocationBtn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+
+                if (userLatInput) userLatInput.value = lat;
+                if (userLngInput) userLngInput.value = lng;
+                if (locationInput) {
+                    locationInput.value = "Current Location";
+                    locationInput.dataset.geolocated = "true";
+                }
+
+                useLocationBtn.innerHTML = originalHTML;
+                useLocationBtn.disabled = false;
+
+                if (searchForm) {
+                    searchForm.submit();
+                } else {
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('user_lat', lat);
+                    params.set('user_lng', lng);
+                    params.set('location', 'Current Location');
+                    window.location.search = params.toString();
+                }
+            },
+            function (error) {
+                useLocationBtn.innerHTML = originalHTML;
+                useLocationBtn.disabled = false;
+                let message = "Could not obtain your location.";
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = "Location permission was denied. You can search for doctors by entering your city in the location box.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Location information is currently unavailable. Please enter your city manually.";
+                        break;
+                    case error.TIMEOUT:
+                        message = "The request to get your location timed out. Please try again or enter your city manually.";
+                        break;
+                }
+                alert(message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    });
+}
+
+// Clear coordinates if patient types a city manually
+if (locationInput) {
+    locationInput.addEventListener("input", function () {
+        const val = locationInput.value.toLowerCase().trim();
+        if (val !== "current location" && val !== "my location" && val !== "near me") {
+            if (userLatInput) userLatInput.value = "";
+            if (userLngInput) userLngInput.value = "";
+            delete locationInput.dataset.geolocated;
+        }
+    });
 }
 
 

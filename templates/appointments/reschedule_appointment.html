@@ -25,8 +25,18 @@
             <strong>{{ slot_data.date|date:"D, M d, Y" }}</strong>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;">
                 {% for slot in slot_data.slots %}
-                <label class="time-slot-label">
-                    <input type="radio" name="appointment_time" value="{{ slot }}" onchange="setRescheduleSlot('{{ date_str }}', '{{ slot }}', this)" required>
+                <label class="time-slot-label"
+                       id="reschedule_label_{{ date_str }}_{{ slot|cut:':' }}"
+                       data-date="{{ date_str }}"
+                       data-time="{{ slot }}"
+                       for="reschedule_slot_{{ date_str }}_{{ slot|cut:':' }}">
+                    <input type="radio"
+                           name="selected_slot"
+                           id="reschedule_slot_{{ date_str }}_{{ slot|cut:':' }}"
+                           value="{{ date_str }}|{{ slot }}|{{ appointment.clinic.clinic_id }}"
+                           data-date="{{ date_str }}"
+                           data-time="{{ slot }}"
+                           required>
                     {{ slot }}
                 </label>
                 {% endfor %}
@@ -34,7 +44,7 @@
         </div>
         {% endfor %}
         <input type="hidden" name="appointment_date" id="selectedDateInput" value="">
-        <input type="hidden" name="appointment_time_hidden" id="selectedTimeInput" value="">
+        <input type="hidden" name="appointment_time" id="selectedTimeInput" value="">
         <button type="submit" class="book-now-btn" style="margin-top:20px;">Save New Appointment Time</button>
         {% else %}
         <p style="color:#64748b;">No available slots found.</p>
@@ -46,25 +56,69 @@
 .time-slot-label {
     display: block; padding: 10px; background: white;
     border: 1px solid #e2e8f0; border-radius: 8px;
-    text-align: center; cursor: pointer; transition: 0.3s;
+    text-align: center; cursor: pointer; transition: 0.2s;
+    user-select: none;
 }
-.time-slot-label input[type="radio"] { display: none; }
+.time-slot-label input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
 .time-slot-label:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
-.time-slot-label.selected { background: #3b82f6; color: #ffffff; border-color: #3b82f6; }
+.time-slot-label.selected,
+.time-slot-label:has(input[type="radio"]:checked) {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
 </style>
 
 <script>
-function setRescheduleSlot(dateStr, timeStr, element) {
+function selectRescheduleSlot(dateStr, timeStr, radioEl) {
     document.getElementById('selectedDateInput').value = dateStr;
     document.getElementById('selectedTimeInput').value = timeStr;
-    
+
+    // Ensure only one radio is checked across all dates
+    document.querySelectorAll('input[name="selected_slot"]').forEach(function(radio) {
+        if (radio !== radioEl) {
+            radio.checked = false;
+        }
+    });
+    if (radioEl) {
+        radioEl.checked = true;
+    }
+
+    // Remove selected highlight from all slots and highlight only this slot's label
     document.querySelectorAll('.time-slot-label').forEach(function(el) { 
         el.classList.remove('selected'); 
     });
-    element.parentElement.classList.add('selected');
+    const parentLabel = radioEl ? radioEl.closest('.time-slot-label') : null;
+    if (parentLabel) {
+        parentLabel.classList.add('selected');
+    }
 }
+
+document.querySelectorAll('input[name="selected_slot"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        if (this.checked) {
+            selectRescheduleSlot(this.dataset.date, this.dataset.time, this);
+        }
+    });
+    radio.addEventListener('click', function() {
+        selectRescheduleSlot(this.dataset.date, this.dataset.time, this);
+    });
+});
+
+document.querySelectorAll('.time-slot-label').forEach(function(label) {
+    label.addEventListener('click', function() {
+        const input = label.querySelector('input[name="selected_slot"]');
+        if (input && !input.disabled) {
+            selectRescheduleSlot(input.dataset.date, input.dataset.time, input);
+        }
+    });
+});
+
 document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
-    if (!document.getElementById('selectedDateInput').value) {
+    const selectedDate = document.getElementById('selectedDateInput').value;
+    const selectedTime = document.getElementById('selectedTimeInput').value;
+    if (!selectedDate || !selectedTime) {
         e.preventDefault();
         alert('Please select a date and time slot.');
     }

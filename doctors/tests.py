@@ -102,3 +102,62 @@ class DoctorWorkflowTests(TestCase):
         self.client.post(reverse('doctor_availability'), {f'start_{self.day.pk}': '14:00', f'end_{self.day.pk}': '15:00', f'clinics_{self.day.pk}': self.clinic.pk})
         self.assertTrue(DoctorAvailability.objects.filter(pk=existing.pk).exists())
         self.assertTrue(DoctorAvailability.objects.filter(doctor=self.doctor, start_time='14:00', end_time='15:00').exists())
+
+    def test_geolocation_orders_doctors_by_proximity(self):
+        # Set clinic coordinates for Mumbai (self.clinic)
+        self.clinic.latitude = 19.0760
+        self.clinic.longitude = 72.8777
+        self.clinic.save()
+
+        # Create a second clinic in Pune (~120km away) and doctor
+        pune_city = CityMaster.objects.create(state=self.clinic.city.state, city_name='Pune')
+        pune_user = User.objects.create(
+            full_name='Pune Clinic', email='pune_clinic@d.test', contact_number=9020000088,
+            password_hash=make_password('Secret123!'), role=self.clinic_role
+        )
+        pune_clinic = Clinic.objects.create(
+            user=pune_user, clinic_name='Pune Health Center', address='Pune Camp',
+            city=pune_city, contact_number=9020000088, latitude=18.5204, longitude=73.8567
+        )
+        pune_doc_user = User.objects.create(
+            full_name='Dr. Pune Doctor', email='pune_doc@d.test', contact_number=9020000089,
+            password_hash=make_password('Secret123!'), role=self.doctor_role
+        )
+        pune_doctor = Doctor.objects.create(
+            user=pune_doc_user, doctor_name='Dr. Pune Cardiologist', experience=10,
+            new_patient_fee=600, old_patient_fee=400
+        )
+        DoctorClinic.objects.create(doctor=pune_doctor, clinic=pune_clinic)
+        DoctorSpecialization.objects.create(doctor=pune_doctor, specialization=self.spec)
+
+        # Patient searches from near Mumbai (19.0770, 72.8780)
+        res = self.client.get(reverse('doctor_list'), {
+            'user_lat': '19.0770',
+            'user_lng': '72.8780',
+            'location': 'Current Location'
+        })
+        self.assertEqual(res.status_code, 200)
+        doctors_in_context = list(res.context['doctors'])
+
+        # Doctor in Mumbai should be first (closest, < 1 km)
+        self.assertEqual(doctors_in_context[0].doctor_id, self.doctor.doctor_id)
+        self.assertIsNotNone(doctors_in_context[0].distance_km)
+        self.assertLess(doctors_in_context[0].distance_km, 5.0)
+
+        # Doctor in Pune should be second (~120 km)
+        self.assertEqual(doctors_in_context[1].doctor_id, pune_doctor.doctor_id)
+        self.assertGreater(doctors_in_context[1].distance_km, 50.0)
+
+        # Proximity banner and distance badge appear in HTML
+        self.assertContains(res, 'Showing eligible doctors ordered by proximity')
+        self.assertContains(res, 'km away')
+
+    def test_invalid_geolocation_handled_gracefully(self):
+        # Coordinates out of bounds or non-numeric should safely fall back
+        res = self.client.get(reverse('doctor_list'), {
+            'user_lat': '999.0',
+            'user_lng': 'invalid_lng'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.context['has_user_location'])
+        self.assertContains(res, 'Aarav Sharma')

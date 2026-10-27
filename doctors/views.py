@@ -8,6 +8,7 @@ from accounts.models import Patient, Clinic, DayMaster
 from appointments.models import Appointment
 
 
+import math
 import os
 import logging
 from django.conf import settings
@@ -15,11 +16,46 @@ import joblib
 
 logger = logging.getLogger(__name__)
 
+
+def haversine_distance_km(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance in kilometers between two points
+    on the earth (specified in decimal degrees) using the Haversine formula.
+    """
+    R = 6371.0  # Earth's radius in kilometers
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = (math.sin(delta_phi / 2.0) ** 2 +
+         math.cos(phi1) * math.cos(phi2) *
+         math.sin(delta_lambda / 2.0) ** 2)
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return R * c
+
+
 def doctor_list(request):
     search = request.GET.get('search', '')
     specialization = request.GET.get('specialization', '')
     location = request.GET.get('location', '')
     symptoms = request.GET.get('symptoms', '')
+    user_lat_raw = request.GET.get('user_lat', '').strip()
+    user_lng_raw = request.GET.get('user_lng', '').strip()
+
+    user_lat = None
+    user_lng = None
+    if user_lat_raw and user_lng_raw:
+        try:
+            lat_f = float(user_lat_raw)
+            lng_f = float(user_lng_raw)
+            if -90.0 <= lat_f <= 90.0 and -180.0 <= lng_f <= 180.0:
+                user_lat = lat_f
+                user_lng = lng_f
+        except (ValueError, TypeError):
+            user_lat = None
+            user_lng = None
+
+    is_geo_search = (user_lat is not None and user_lng is not None)
     
     predicted_specialization = None
     if symptoms:
@@ -43,20 +79,64 @@ def doctor_list(request):
             doctor_specialization__specialization__specialization_name__iexact=specialization.strip()
         ).distinct()
     if location:
-        doctors = doctors.filter(
-            doctor_clinic__clinic__city__city_name__icontains=location
-        ).distinct()
+        # If geolocation is active and location is a label like 'Current Location', skip city string filter
+        if not (is_geo_search and location.strip().lower() in ('current location', 'my location', 'near me')):
+            doctors = doctors.filter(
+                doctor_clinic__clinic__city__city_name__icontains=location.strip()
+            ).distinct()
 
     from doctors.models import SpecializationMaster
     specializations = SpecializationMaster.objects.all()
     cities = Clinic.objects.values_list('city__city_name', flat=True).distinct()
 
+    doctors = doctors.prefetch_related('doctor_clinic__clinic__city', 'doctor_specialization__specialization')
+
+    if is_geo_search:
+        with_distance = []
+        without_distance = []
+        for doc in doctors:
+            min_dist = None
+            nearest_clinic = None
+            for dc in doc.doctor_clinic.all():
+                clinic = dc.clinic
+                if clinic and clinic.latitude is not None and clinic.longitude is not None:
+                    try:
+                        c_lat = float(clinic.latitude)
+                        c_lng = float(clinic.longitude)
+                        dist = haversine_distance_km(user_lat, user_lng, c_lat, c_lng)
+                        if min_dist is None or dist < min_dist:
+                            min_dist = dist
+                            nearest_clinic = clinic
+                    except (ValueError, TypeError):
+                        continue
+            if min_dist is not None:
+                doc.distance_km = round(min_dist, 1)
+                doc.nearest_clinic = nearest_clinic
+                with_distance.append(doc)
+            else:
+                doc.distance_km = None
+                first_dc = doc.doctor_clinic.first()
+                doc.nearest_clinic = first_dc.clinic if first_dc else None
+                without_distance.append(doc)
+
+        with_distance.sort(key=lambda d: d.distance_km)
+        ordered_doctors = with_distance + without_distance
+    else:
+        ordered_doctors = list(doctors)
+        for doc in ordered_doctors:
+            doc.distance_km = None
+            first_dc = doc.doctor_clinic.first()
+            doc.nearest_clinic = first_dc.clinic if first_dc else None
+
     return render(request, 'doctors/doctor_list.html', {
-        'doctors': doctors,
+        'doctors': ordered_doctors,
         'specializations': specializations,
         'cities': cities,
         'predicted_specialization': predicted_specialization,
         'symptoms_query': symptoms,
+        'user_lat': user_lat if user_lat is not None else '',
+        'user_lng': user_lng if user_lng is not None else '',
+        'has_user_location': is_geo_search,
     })
 
 
