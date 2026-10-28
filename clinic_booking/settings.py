@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 from pathlib import Path
 
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -178,6 +179,14 @@ elif mysql_host or mysql_database:
             },
         }
     }
+elif any(cmd in sys.argv for cmd in ('collectstatic',)):
+    # Static asset collection during build does not require a database connection
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
 elif IS_PRODUCTION:
     # 4. Fail fast in production with a clear error rather than silently using ephemeral SQLite
     raise ImproperlyConfigured(
@@ -265,21 +274,6 @@ IS_VERCEL = bool(
     or os.environ.get('VERCEL_ENV') in ('production', 'preview', 'development')
 )
 
-if IS_VERCEL:
-    missing_r2_vars = [
-        var for var, val in [
-            ('R2_ACCOUNT_ID', R2_ACCOUNT_ID),
-            ('R2_ACCESS_KEY_ID', R2_ACCESS_KEY_ID),
-            ('R2_SECRET_ACCESS_KEY', R2_SECRET_ACCESS_KEY),
-            ('R2_BUCKET_NAME', R2_BUCKET_NAME),
-        ] if not val
-    ]
-    if missing_r2_vars:
-        raise ImproperlyConfigured(
-            f"Missing required Cloudflare R2 storage environment variables on Vercel: {', '.join(missing_r2_vars)}. "
-            "Patient photo ID documents and doctor licenses cannot be stored on Vercel's ephemeral local filesystem. "
-            "Please configure R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME in your Vercel project environment variables."
-        )
 
 # Authentication settings
 LOGIN_URL = 'login'
