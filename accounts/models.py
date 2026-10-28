@@ -121,6 +121,10 @@ class Patient(models.Model):
         return self.user.full_name
 
     @property
+    def patient_name(self):
+        return self.user.full_name
+
+    @property
     def masked_id_number(self):
         if not self.id_number:
             return ""

@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -6,25 +7,40 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import FileSystemStorage, Storage
 from storages.backends.s3boto3 import S3Boto3Storage
 
+logger = logging.getLogger(__name__)
+
 
 def get_secure_documents_root():
-    root = getattr(settings, 'SECURE_DOCUMENTS_ROOT', None)
-    if not root:
-        root = Path(settings.BASE_DIR) / 'secure_documents'
-    return Path(root)
+    is_vercel = bool(
+        os.environ.get('VERCEL') == '1'
+        or os.environ.get('VERCEL_ENV') in ('production', 'preview', 'development')
+        or getattr(settings, 'IS_VERCEL', False)
+    )
+    if is_vercel:
+        root_path = Path('/tmp/secure_documents')
+    else:
+        root = getattr(settings, 'SECURE_DOCUMENTS_ROOT', None)
+        if not root:
+            root = Path(settings.BASE_DIR) / 'secure_documents'
+        root_path = Path(root)
+    try:
+        root_path.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    return root_path
 
 
 def get_r2_config():
     """
-    Reads Cloudflare R2 storage credentials from environment variables only:
+    Reads Cloudflare R2 storage credentials from environment variables or settings:
       - R2_ACCOUNT_ID
       - R2_ACCESS_KEY_ID
       - R2_SECRET_ACCESS_KEY
       - R2_BUCKET_NAME
 
     Returns a dict with configured values if all 4 are present.
-    Returns None if none are present in local development.
-    Raises ImproperlyConfigured on Vercel or when credentials are only partially configured.
+    Returns None if none are present (R2 is optional; falls back to local/tmp storage).
+    Raises ImproperlyConfigured only when credentials are partially configured (1 to 3 vars set).
     """
     account_id = os.environ.get('R2_ACCOUNT_ID') or getattr(settings, 'R2_ACCOUNT_ID', None)
     access_key = os.environ.get('R2_ACCESS_KEY_ID') or getattr(settings, 'R2_ACCESS_KEY_ID', None)
@@ -45,20 +61,22 @@ def get_r2_config():
     }
     missing_vars = [k for k, v in r2_vars.items() if not v]
 
-    if is_vercel and missing_vars:
+    # Partial configuration is an error
+    if 0 < len(missing_vars) < 4:
         raise ImproperlyConfigured(
-            f"Missing required Cloudflare R2 storage environment variables on Vercel: {', '.join(missing_vars)}. "
-            "Patient photo ID documents and doctor licenses cannot be stored on Vercel's ephemeral local filesystem. "
-            "Please configure R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME in your Vercel project environment variables."
+            f"Incomplete Cloudflare R2 storage configuration. Missing: {', '.join(missing_vars)}. "
+            "All 4 variables (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME) must be configured if using R2."
         )
 
-    if missing_vars:
-        if len(missing_vars) < 4:
-            raise ImproperlyConfigured(
-                f"Incomplete Cloudflare R2 storage configuration. Missing: {', '.join(missing_vars)}. "
-                "All 4 variables (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME) must be configured."
+    # 0 variables present: R2 is not configured, fall back gracefully
+    if len(missing_vars) == 4:
+        if is_vercel:
+            logger.warning(
+                "Cloudflare R2 storage credentials not configured on Vercel. "
+                "Document storage is falling back to ephemeral /tmp/secure_documents. "
+                "Uploaded documents will not persist across serverless instances until "
+                "R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME are configured."
             )
-        # In local development without R2 credentials, use local filesystem storage
         return None
 
     return {
@@ -151,7 +169,7 @@ class ProtectedStorage(Storage):
             (),
             {
                 'base_url': None,
-                'location': get_secure_documents_root(),
+                'location': Path(settings.BASE_DIR) / 'secure_documents',
             },
         )
 
