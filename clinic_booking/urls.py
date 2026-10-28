@@ -11,11 +11,6 @@ urlpatterns = [
     ),
 
     path(
-        "admin/",
-        admin.site.urls
-    ),
-
-    path(
         "doctors/",
         include("doctors.urls")
     ),
@@ -27,6 +22,10 @@ urlpatterns = [
     path(
         "records/",
         include("records.urls")
+    ),
+    path(
+        "admin/",
+        admin.site.urls
     ),
 ]
 

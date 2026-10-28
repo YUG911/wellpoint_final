@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% load clinic_extras %}
-{% load static clinic_extras %}
+{% load static %}
 {% block css %}<link rel="stylesheet" href="{% static 'css/doctors.css' %}">{{ form.media }}{% endblock %}
 {% block title %}Find Doctors | WellPoint{% endblock %}
 {% block content %}
@@ -12,26 +11,18 @@
             <h1>Find the Right Doctor<span> for Your Health.</span></h1>
             <p>Search trusted doctors, explore specialties, and book appointments with ease.</p>
         </div>
-        <form class="search-box" method="get" id="searchForm">
+        <form class="search-box" method="get">
             <div class="search-input">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="searchInput" name="search" placeholder="Search doctor or specialization" value="{{ request.GET.search|default:'' }}">
             </div>
             <div class="search-divider"></div>
-            <div class="location-input" style="flex: 1.5;">
-                <i class="fa-solid fa-notes-medical"></i>
-                <input type="text" id="symptomsInput" name="symptoms" placeholder="Not sure? Describe symptoms" value="{{ symptoms_query|default:'' }}">
-            </div>
-            <div class="location-input" style="position: relative;">
-                <i class="fa-solid fa-location-dot"></i>
-                <input type="text" id="locationInput" name="location" placeholder="City or locality (e.g. Navrangpura, Vastrapur)" value="{{ request.GET.location|default:'' }}" {% if has_user_location %}data-geolocated="true"{% endif %}>
-                <button type="button" id="useLocationBtn" class="use-location-btn" title="Use my current location" aria-label="Use my current location">
-                    <i class="fa-solid fa-location-crosshairs"></i>
-                    <span class="location-btn-text">Near Me</span>
+            <div class="location-input">
+                <button type="button" class="location-trigger" id="locationTrigger" aria-label="Choose location" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa-solid fa-location-dot"></i>
                 </button>
+                <input type="text" id="locationInput" name="location" placeholder="Enter location" value="{{ request.GET.location|default:'' }}" autocomplete="off">
             </div>
-            <input type="hidden" name="user_lat" id="userLatInput" value="{{ user_lat|default:'' }}">
-            <input type="hidden" name="user_lng" id="userLngInput" value="{{ user_lng|default:'' }}">
             <div class="location-input">
                 <i class="fa-solid fa-stethoscope"></i>
                 <select name="specialization" aria-label="Specialization" style="width:100%;border:0;outline:0;background:transparent;">
@@ -42,9 +33,42 @@
             <button type="submit" class="search-button" id="searchButton">
                 <i class="fa-solid fa-magnifying-glass"></i><span>Search</span>
             </button>
+
+            <div class="location-popup" id="locationPopup" role="dialog" aria-label="Choose location" hidden>
+                <div class="location-popup-header">
+                    <span class="location-popup-title"><i class="fa-solid fa-location-dot"></i> Choose Location</span>
+                    <button type="button" class="location-popup-close" id="locationPopupClose" aria-label="Close">&times;</button>
+                </div>
+
+                <button type="button" class="location-option" id="useCurrentLocation">
+                    <i class="fa-solid fa-crosshairs"></i>
+                    <span>Use Current Location</span>
+                </button>
+
+                <div class="location-popup-separator"><span>OR</span></div>
+
+                <label class="location-popup-label" for="locationManualInput">Enter location manually</label>
+                <input type="text" id="locationManualInput" class="location-manual-input" placeholder="Search area/locality..." autocomplete="off">
+                <div class="location-examples" id="locationExamples">
+                    <button type="button" class="location-chip">Ranip</button>
+                    <button type="button" class="location-chip">Bapunagar</button>
+                    <button type="button" class="location-chip">Kalupur</button>
+                    <button type="button" class="location-chip">Bopal</button>
+                    <button type="button" class="location-chip">Navrangpura</button>
+                    <button type="button" class="location-chip">Maninagar</button>
+                    <button type="button" class="location-chip">Satellite</button>
+                </div>
+
+                <p class="location-message" id="locationMessage" role="status" hidden></p>
+
+                <div class="location-popup-actions">
+                    <button type="button" class="location-apply" id="locationApply">Apply Location</button>
+                </div>
+            </div>
         </form>
     </div>
 </section>
+{{ clinic_locations|json_script:"clinicLocations" }}
 
 <main class="doctors-page">
     <div class="doctors-container">
@@ -81,86 +105,52 @@
         </aside>
 
         <section class="doctors-section">
-            {% if predicted_specialization %}
-            <div class="alert alert-info" style="background:#e0f2fe; color:#0369a1; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-robot"></i>
-                <div>
-                    <strong>AI Recommendation:</strong> Based on your symptoms, we recommend seeing a <strong>{{ predicted_specialization }}</strong>.
-                </div>
+<div class="results-header">
+            <div>
+                <p class="results-label">AVAILABLE DOCTORS</p>
+                <h2><span id="doctorCount">{{ doctors|length }}</span> Doctors Found</h2>
             </div>
+            {% if current_user and current_user.role.role_name == 'Patient' %}
+            <a href="{% url 'recommend_doctor' %}" class="btn btn-primary">Not sure? Describe your symptoms</a>
             {% endif %}
-            {% if has_user_location %}
-            <div class="location-banner" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:12px 18px; border-radius:10px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-location-crosshairs" style="color:#2563eb; font-size:16px;"></i>
-                    <span>Showing eligible doctors ordered by proximity to your current location.</span>
-                </div>
-                <a href="{% url 'doctor_list' %}" style="color:#2563eb; font-weight:600; text-decoration:none; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
-                    <i class="fa-solid fa-xmark"></i> Clear Location
-                </a>
-            </div>
-            {% endif %}
-            <div class="results-header">
-                <div>
-                    <p class="results-label">AVAILABLE DOCTORS</p>
-                    <h2><span id="doctorCount">{{ doctors|length }}</span> Doctors Found</h2>
-                </div>
-            </div>
+        </div>
             <div class="doctors-list" id="doctorsList">
                 {% for doctor in doctors %}
                 <article class="doctor-card"
                     data-name="{{ doctor.doctor_name|lower }}"
                     data-experience="{{ doctor.experience|default:0 }}"
                     data-fee="{{ doctor.new_patient_fee }}"
-                    data-distance="{{ doctor.distance_km|default:'' }}"
                     data-specialization="{% for ds in doctor.doctor_specialization.all %}{{ ds.specialization.specialization_name|lower }} {% endfor %}"
-                    data-location="{% for dc in doctor.doctor_clinic.all %}{{ dc.clinic.city.city_name|lower }} {{ dc.clinic.address|lower }} {{ dc.clinic.clinic_name|lower }} {% endfor %}">
+                    data-location="{% for dc in doctor.doctor_clinic.all %}{{ dc.clinic.city.city_name|lower }} {% endfor %}">
                     <div class="doctor-image">
-                        <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
+                        <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
                     </div>
                     <div class="doctor-info">
                         <div class="doctor-top">
                             <div>
-                                <h3>{{ doctor.doctor_name|doctor_display }}</h3>
+                                <h3>{{ doctor.doctor_name }}</h3>
                                 <p class="specialization">
                                     {% for ds in doctor.doctor_specialization.all %}
                                     {{ ds.specialization.specialization_name }}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 </p>
                             </div>
-                            {% if doctor.doctor_clinic.exists and doctor.doctoravailability_set.exists %}
                             <span class="available-badge"><span></span> Available</span>
-                            {% else %}
-                            <span class="available-badge" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1;"><i class="fa-solid fa-clock"></i> No Slots</span>
-                            {% endif %}
                         </div>
                         <div class="doctor-details">
                             <span><i class="fa-solid fa-briefcase-medical"></i> {{ doctor.experience|default:'0' }} Years Experience</span>
-                            {% if doctor.nearest_clinic %}
-                            <span><i class="fa-solid fa-hospital"></i> {{ doctor.nearest_clinic.clinic_name }}{% if doctor.doctor_clinic.all|length > 1 %} <span style="color:#64748b;font-size:12px;">(+{{ doctor.doctor_clinic.all|length|add:"-1" }} more)</span>{% endif %}</span>
-                            {% elif doctor.doctor_clinic.first %}
+                            {% if doctor.doctor_clinic.first %}
                             <span><i class="fa-solid fa-hospital"></i> {{ doctor.doctor_clinic.first.clinic.clinic_name }}</span>
-                            {% endif %}
-                            {% if doctor.distance_km is not None %}
-                            <span class="distance-badge" style="color: #2563eb; font-weight: 600;"><i class="fa-solid fa-route"></i> {{ doctor.distance_km }} km away</span>
                             {% endif %}
                         </div>
                         <div class="doctor-bottom">
-                            <div class="fee"><span>Consultation Fee</span><strong>&#8377;{{ doctor.new_patient_fee }}</strong></div>
+                            <div class="fee"><span>Consultation Fee</span><strong>&#8376;{{ doctor.new_patient_fee }}</strong></div>
                             <div class="doctor-actions">
-                                <a href="{% url 'doctor_detail' doctor.doctor_id %}{% if user_lat and user_lng %}?user_lat={{ user_lat }}&user_lng={{ user_lng }}{% endif %}" class="view-profile">View Profile</a>
-                                {% if doctor.doctor_clinic.exists and doctor.doctoravailability_set.exists %}
-                                    {% if doctor.user.is_verified and doctor.license_verification_status == 'Approved' %}
-                                        {% if current_user %}
-                                        <a href="{% url 'book_appointment' doctor.doctor_id %}{% if doctor.nearest_clinic %}?clinic_id={{ doctor.nearest_clinic.clinic_id }}{% if user_lat and user_lng %}&user_lat={{ user_lat }}&user_lng={{ user_lng }}{% endif %}{% endif %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
-                                        {% else %}
-                                        <a href="{% url 'login' %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
-                                        {% endif %}
-                                    {% else %}
-                                        <span style="font-size:12px; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:6px 10px; border-radius:6px; font-weight:500;">
-                                            <i class="fa-solid fa-clock"></i> Verification Pending
-                                        </span>
-                                    {% endif %}
+                                <a href="{% url 'doctor_detail' doctor.doctor_id %}" class="view-profile">View Profile</a>
+                                {% if current_user %}
+                                <a href="{% url 'book_appointment' doctor.doctor_id %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
+                                {% else %}
+                                <a href="{% url 'login' %}" class="book-appointment">Book Appointment <i class="fa-solid fa-arrow-right"></i></a>
                                 {% endif %}
                             </div>
                         </div>

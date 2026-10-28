@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% load clinic_extras %}
-{% load static clinic_extras %}
+{% load static %}
 {% block css %}<link rel="stylesheet" href="{% static 'css/doctor-detail.css' %}">{{ form.media }}{% endblock %}
 {% block title %}{{ doctor.doctor_name }} | WellPoint{% endblock %}
 {% block content %}
@@ -15,13 +14,13 @@
     <div class="page-container">
         <section class="doctor-profile-card">
             <div class="doctor-profile-image">
-                <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
+                <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
             </div>
             <div class="doctor-profile-info">
                 <div class="doctor-profile-top">
                     <div>
                         <p class="profile-label">HEALTHCARE PROFESSIONAL</p>
-                        <h1 id="doctorName">{{ doctor.doctor_name|doctor_display }}</h1>
+                        <h1 id="doctorName">{{ doctor.doctor_name }}</h1>
                         <p class="doctor-specialization" id="doctorSpecialization">
                             {% for ds in specializations %}{{ ds.specialization_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         </p>
@@ -44,7 +43,7 @@
                 </div>
                 <div class="doctor-profile-meta">
                     {% for clinic in clinics %}
-                    <span><i class="fa-solid fa-hospital"></i> {{ clinic.clinic_name }}{% if clinic.distance_km is not None %} ({{ clinic.distance_km }} km away){% endif %}</span>
+                    <span><i class="fa-solid fa-hospital"></i> {{ clinic.clinic_name }}</span>
                     {% endfor %}
                     {% for q in qualifications %}
                     <span><i class="fa-solid fa-graduation-cap"></i> {{ q.qualification_name }}</span>
@@ -107,22 +106,16 @@
                     </div>
                     <div class="consultation-fee">
                         <span>Consultation Fee</span>
-                        <strong>&#8377;{{ doctor.new_patient_fee }}</strong>
+                        <strong>&#8376;{{ doctor.new_patient_fee }}</strong>
                     </div>
-                    {% if doctor.user.is_verified and doctor.license_verification_status == 'Approved' %}
-                        {% if current_user %}
-                        <a href="{% url 'book_appointment' doctor.doctor_id %}{% if user_lat and user_lng %}?user_lat={{ user_lat }}&user_lng={{ user_lng }}{% endif %}" class="book-now-btn">
-                            Continue to Book <i class="fa-solid fa-arrow-right"></i>
-                        </a>
-                        {% else %}
-                        <a href="{% url 'login' %}" class="book-now-btn">
-                            Login to Book <i class="fa-solid fa-arrow-right"></i>
-                        </a>
-                        {% endif %}
+                    {% if current_user %}
+                    <a href="{% url 'book_appointment' doctor.doctor_id %}" class="book-now-btn">
+                        Continue to Book <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                     {% else %}
-                        <div style="background:#fef3c7; border:1px solid #fde68a; color:#92400e; padding:14px; border-radius:8px; font-size:13px; text-align:center; margin-bottom:12px; font-weight:500;">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Doctor verification pending. This doctor is currently ineligible for appointments.
-                        </div>
+                    <a href="{% url 'login' %}" class="book-now-btn">
+                        Login to Book <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                     {% endif %}
                     <p class="booking-note"><i class="fa-solid fa-shield-heart"></i> Your appointment details will be securely processed.</p>
                 </div>

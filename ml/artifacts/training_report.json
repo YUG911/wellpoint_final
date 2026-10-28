@@ -1,0 +1,33 @@
+{
+  "dataset_file": "ml\\dataset\\symptom_specialization_dataset.csv",
+  "dataset_type": "educational synthetic teaching dataset (not real patient data)",
+  "algorithm": "RandomForestClassifier",
+  "n_estimators": 100,
+  "test_size": 0.2,
+  "random_state": 42,
+  "number_of_samples": 600,
+  "training_samples": 480,
+  "testing_samples": 120,
+  "number_of_classes": 10,
+  "classes": [
+    "Cardiology",
+    "Dermatology",
+    "ENT",
+    "Gastroenterology",
+    "General Medicine",
+    "Neurology",
+    "Ophthalmology",
+    "Orthopedics",
+    "Psychiatry",
+    "Urology"
+  ],
+  "number_of_features": 134,
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "training_time_seconds": 0.1442,
+  "inference_time_seconds": 0.005007,
+  "total_time_seconds": 0.3003,
+  "model_file": "ml\\artifacts\\doctor_recommender.joblib"
+}

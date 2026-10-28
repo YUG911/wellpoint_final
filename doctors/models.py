@@ -2,9 +2,6 @@ from django.db import models
 from accounts.models import Clinic, User, DayMaster
 
 
-from accounts.storage import protected_storage
-
-
 class Doctor(models.Model):
     doctor_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, db_column='user_id')
@@ -13,11 +10,6 @@ class Doctor(models.Model):
     new_patient_fee = models.DecimalField(max_digits=10, decimal_places=2)
     old_patient_fee = models.DecimalField(max_digits=10, decimal_places=2)
     about = models.TextField(null=True, blank=True)
-    license_number = models.CharField(max_length=100, null=True, blank=True)
-    issuing_authority = models.CharField(max_length=150, null=True, blank=True)
-    license_document = models.FileField(upload_to='doctor_licenses/', storage=protected_storage, null=True, blank=True)
-    license_verification_status = models.CharField(max_length=20, default='Pending')
-    rejection_reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,607 +1,271 @@
-// =========================
-// GET ELEMENTS
-// =========================
-
-const searchInput =
-    document.getElementById("searchInput");
-
-const locationInput =
-    document.getElementById("locationInput");
-
-const useLocationBtn =
-    document.getElementById("useLocationBtn");
-
-const userLatInput =
-    document.getElementById("userLatInput");
-
-const userLngInput =
-    document.getElementById("userLngInput");
-
-const searchForm =
-    document.getElementById("searchForm") ||
-    document.querySelector(".search-box");
-
-const searchButton =
-    document.getElementById("searchButton");
-
-const doctorCards =
-    document.querySelectorAll(".doctor-card");
-
-const specializationFilters =
-    document.querySelectorAll(".specialization-filter");
+const searchInput = document.getElementById("searchInput");
+const locationInput = document.getElementById("locationInput");
+const searchButton = document.getElementById("searchButton");
+const doctorCards = document.querySelectorAll(".doctor-card");
+const specializationFilters = document.querySelectorAll(".specialization-filter");
 const locationFilters = document.querySelectorAll(".location-filter");
-
-const availabilityFilters =
-    document.querySelectorAll(".availability-filter");
-
-const experienceFilters =
-    document.querySelectorAll(
-        'input[name="experience"]'
-    );
-
-const feeFilters =
-    document.querySelectorAll(
-        'input[name="fee"]'
-    );
-
-const doctorCount =
-    document.getElementById("doctorCount");
-
+const experienceFilters = document.querySelectorAll('input[name="experience"]');
+const doctorCount = document.getElementById("doctorCount");
 const noResults = document.querySelector(".no-results");
-
-const clearFilters =
-    document.getElementById("clearFilters");
-
-const resetSearch =
-    document.getElementById("resetSearch");
-
-const sortDoctors =
-    document.getElementById("sortDoctors");
-
-const doctorsList =
-    document.getElementById("doctorsList");
-
-const mobileMenuBtn =
-    document.getElementById("mobileMenuBtn");
-
-const mobileMenu =
-    document.getElementById("mobileMenu");
-
-
-// =========================
-// SEARCH + FILTER FUNCTION
-// =========================
+const clearFilters = document.getElementById("clearFilters");
 
 function filterDoctors() {
-    if (!doctorsList || !doctorCards || doctorCards.length === 0) return;
+    const searchValue = searchInput.value.toLowerCase();
+    const locationValue = locationInput.value.toLowerCase();
 
-    const searchValue =
-        searchInput ? searchInput.value.toLowerCase() : "";
-
-    const locationValue =
-        locationInput ? locationInput.value.toLowerCase() : "";
-
-
-    // Selected specializations
-
-    const selectedSpecializations =
-        Array.from(specializationFilters)
-            .filter(filter => filter.checked)
-            .map(filter => filter.value.toLowerCase());
-    const selectedLocations = Array.from(locationFilters).filter(filter => filter.checked).map(filter => filter.value.toLowerCase());
-
-
-    // Selected availability
-
-    const selectedAvailability =
-        Array.from(availabilityFilters)
-            .filter(filter => filter.checked)
-            .map(filter => filter.value);
-
-
-    // Selected experience
-
-    const selectedExpEl = document.querySelector('input[name="experience"]:checked');
-    const selectedExperience = selectedExpEl ? selectedExpEl.value : 'all';
-
-
-    // Selected fee
-
-    const selectedFeeInput = document.querySelector('input[name="fee"]:checked');
-    const selectedFee = selectedFeeInput ? selectedFeeInput.value : 'all';
-
+    const selectedSpecializations = Array.from(specializationFilters)
+        .filter(filter => filter.checked)
+        .map(filter => filter.value.toLowerCase());
+    const selectedLocations = Array.from(locationFilters)
+        .filter(filter => filter.checked)
+        .map(filter => filter.value.toLowerCase());
+    const selectedExperience = document.querySelector('input[name="experience"]:checked').value;
 
     let visibleDoctors = 0;
 
-
     doctorCards.forEach(function (card) {
+        const name = card.dataset.name.toLowerCase();
+        const specialization = card.dataset.specialization.toLowerCase();
+        const location = card.dataset.location.toLowerCase();
+        const experience = Number(card.dataset.experience);
 
-        const name =
-            card.dataset.name.toLowerCase();
-
-        const specialization =
-            card.dataset.specialization;
-
-        const location =
-            card.dataset.location.toLowerCase();
-
-        const experience =
-            Number(card.dataset.experience);
-
-        const fee =
-            Number(card.dataset.fee);
-
-        const availability = (card.dataset.availability || "").split(" ");
-
-
-        // SEARCH MATCH
-
-        const matchesSearch =
-            name.includes(searchValue) ||
-            specialization
-                .toLowerCase()
-                .includes(searchValue);
-
-
-        // LOCATION MATCH (Respects geolocation and manual city/locality filters)
-
-        const locationValTrim = locationValue.trim();
-        const isLocGeolocated = (locationValTrim === "current location" ||
-                                 locationValTrim === "my location" ||
-                                 (locationInput && locationInput.dataset.geolocated === "true"));
-
-        const isGeolocated = (userLatInput && userLatInput.value !== "" &&
-                              userLngInput && userLngInput.value !== "" &&
-                              isLocGeolocated);
-
-        const matchesLocation =
-            isGeolocated ||
-            locationValTrim === "" ||
-            location.includes(locationValTrim);
-
-
-        // SPECIALIZATION MATCH
-
-        const matchesSpecialization =
-            selectedSpecializations.length === 0 ||
-            selectedSpecializations.some(value => specialization.toLowerCase().includes(value));
-        const matchesSelectedLocation = selectedLocations.length === 0 || selectedLocations.some(value => location.includes(value));
-
-
-        // EXPERIENCE MATCH
+        const matchesSearch = name.includes(searchValue) || specialization.includes(searchValue);
+        const matchesLocation = location.includes(locationValue);
+        const matchesSelectedLocation = selectedLocations.length === 0 ||
+            selectedLocations.some(value => location.includes(value));
+        const matchesSpecialization = selectedSpecializations.length === 0 ||
+            selectedSpecializations.some(value => specialization.includes(value));
 
         let matchesExperience = true;
-
-
         if (selectedExperience === "1-5") {
-
-            matchesExperience =
-                experience >= 1 &&
-                experience <= 5;
-
+            matchesExperience = experience >= 1 && experience <= 5;
+        } else if (selectedExperience === "5-10") {
+            matchesExperience = experience >= 5 && experience <= 10;
+        } else if (selectedExperience === "10+") {
+            matchesExperience = experience >= 10;
         }
 
-        else if (selectedExperience === "5-10") {
-
-            matchesExperience =
-                experience >= 5 &&
-                experience <= 10;
-
-        }
-
-        else if (selectedExperience === "10+") {
-
-            matchesExperience =
-                experience >= 10;
-
-        }
-
-
-        // FEE MATCH
-
-        let matchesFee = true;
-
-
-        if (selectedFee === "500") {
-
-            matchesFee = fee < 500;
-
-        }
-
-        else if (selectedFee === "1000") {
-
-            matchesFee =
-                fee >= 500 &&
-                fee <= 1000;
-
-        }
-
-        else if (selectedFee === "above1000") {
-
-            matchesFee =
-                fee > 1000;
-
-        }
-
-
-        // AVAILABILITY MATCH
-
-        const matchesAvailability =
-            selectedAvailability.length === 0 ||
-
-            selectedAvailability.some(
-                value =>
-                    availability.includes(value)
-            );
-
-
-        // FINAL RESULT
-
-        if (
-            matchesSearch &&
-            matchesLocation &&
-            matchesSelectedLocation &&
-            matchesSpecialization &&
-            matchesExperience &&
-            matchesFee &&
-            matchesAvailability
-        ) {
-
+        if (matchesSearch && matchesLocation && matchesSelectedLocation &&
+            matchesSpecialization && matchesExperience) {
             card.style.display = "grid";
-
             visibleDoctors++;
-
-        }
-
-        else {
-
+        } else {
             card.style.display = "none";
-
         }
-
     });
 
-
-    // UPDATE COUNT
-
-    if (doctorCount) {
-        doctorCount.textContent =
-            visibleDoctors;
-    }
-
-
-    // NO RESULTS
-
-    if (visibleDoctors === 0) {
-
-        if (noResults) noResults.style.display = "block";
-
-    }
-
-    else {
-
-        if (noResults) noResults.style.display = "none";
-
-    }
-
+    doctorCount.textContent = visibleDoctors;
+    noResults.style.display = visibleDoctors === 0 ? "block" : "none";
 }
 
+if (searchButton) searchButton.addEventListener("click", filterDoctors);
+if (searchInput) searchInput.addEventListener("input", filterDoctors);
+if (locationInput) locationInput.addEventListener("input", filterDoctors);
 
-// =========================
-// SEARCH BUTTON & LIVE FILTERING (Doctor list page)
-// =========================
-
-if (doctorsList) {
-    if (searchButton) searchButton.addEventListener(
-        "click",
-        filterDoctors
-    );
-
-    if (searchInput) searchInput.addEventListener(
-        "input",
-        filterDoctors
-    );
-
-    if (locationInput) locationInput.addEventListener(
-        "input",
-        filterDoctors
-    );
-}
-
-
-// =========================
-// FILTER EVENTS
-// =========================
-
-specializationFilters.forEach(
-    function (filter) {
-
-        filter.addEventListener(
-            "change",
-            filterDoctors
-        );
-
-    }
-);
-
-
-availabilityFilters.forEach(
-    function (filter) {
-
-        filter.addEventListener(
-            "change",
-            filterDoctors
-        );
-
-    }
-);
-
+specializationFilters.forEach(filter => filter.addEventListener("change", filterDoctors));
 locationFilters.forEach(filter => filter.addEventListener("change", filterDoctors));
+experienceFilters.forEach(filter => filter.addEventListener("change", filterDoctors));
 
-
-experienceFilters.forEach(
-    function (filter) {
-
-        filter.addEventListener(
-            "change",
-            filterDoctors
-        );
-
-    }
-);
-
-
-feeFilters.forEach(
-    function (filter) {
-
-        filter.addEventListener(
-            "change",
-            filterDoctors
-        );
-
-    }
-);
-
-
-// =========================
-// CLEAR FILTERS
-// =========================
-
-if (clearFilters) clearFilters.addEventListener(
-    "click",
-    resetAll
-);
-
-if (resetSearch) resetSearch.addEventListener(
-    "click",
-    resetAll
-);
-
-
-function resetAll() {
-
-    // Clear search
-
+if (clearFilters) clearFilters.addEventListener("click", function () {
     searchInput.value = "";
-
     locationInput.value = "";
-
-    if (userLatInput) userLatInput.value = "";
-    if (userLngInput) userLngInput.value = "";
-    if (locationInput) delete locationInput.dataset.geolocated;
-
-
-    // Clear checkboxes
-
-    specializationFilters.forEach(
-        function (filter) {
-
-            filter.checked = false;
-
-        }
-    );
-
-
-    availabilityFilters.forEach(
-        function (filter) {
-
-            filter.checked = false;
-
-        }
-    );
-
-
-    // Reset radio buttons
-
-    const defaultExperience = document.querySelector('input[name="experience"][value="all"]');
-    if (defaultExperience) defaultExperience.checked = true;
-
-
-    const defaultFee = document.querySelector('input[name="fee"][value="all"]');
-    if (defaultFee) defaultFee.checked = true;
-
-
+    specializationFilters.forEach(filter => { filter.checked = false; });
+    locationFilters.forEach(filter => { filter.checked = false; });
+    document.querySelector('input[name="experience"][value="all"]').checked = true;
     filterDoctors();
+});
 
+filterDoctors();
+
+// ─── LOCATION PICKER ─────────────────────────────────────────────
+const locationTrigger = document.getElementById("locationTrigger");
+const locationPopup = document.getElementById("locationPopup");
+const locationPopupClose = document.getElementById("locationPopupClose");
+const locationManualInput = document.getElementById("locationManualInput");
+const locationApply = document.getElementById("locationApply");
+const locationUseCurrent = document.getElementById("useCurrentLocation");
+const locationExamples = document.getElementById("locationExamples");
+const locationMessage = document.getElementById("locationMessage");
+
+function showLocationMessage(text) {
+    locationMessage.textContent = text;
+    locationMessage.hidden = false;
 }
 
+function clearLocationMessage() {
+    locationMessage.hidden = true;
+    locationMessage.textContent = "";
+}
 
-// =========================
-// REAL-TIME GEOLOCATION
-// =========================
+function openLocationPopup() {
+    locationPopup.hidden = false;
+    locationTrigger.setAttribute("aria-expanded", "true");
+    locationManualInput.focus();
+}
 
-if (useLocationBtn) {
-    useLocationBtn.addEventListener("click", function () {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser. Please enter your city manually in the search box.");
+function closeLocationPopup() {
+    locationPopup.hidden = true;
+    locationTrigger.setAttribute("aria-expanded", "false");
+}
+
+function applyLocation(value) {
+    if (!value) return;
+    locationInput.value = value;
+    filterDoctors();
+    closeLocationPopup();
+}
+
+function distanceInKm(lat1, lon1, lat2, lon2) {
+    const toRad = deg => deg * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function nearestClinicCity(latitude, longitude) {
+    const node = document.getElementById("clinicLocations");
+    if (!node) return null;
+    let clinics;
+    try {
+        clinics = JSON.parse(node.textContent);
+    } catch (error) {
+        return null;
+    }
+    let best = null;
+    let bestDistance = Infinity;
+    clinics.forEach(function (entry) {
+        const distance = distanceInKm(latitude, longitude, Number(entry[1]), Number(entry[2]));
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            best = entry[0];
+        }
+    });
+    return best;
+}
+
+function onLocationSuccess(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const nearest = nearestClinicCity(latitude, longitude);
+
+    if (nearest) {
+        applyLocation(nearest);
+        return;
+    }
+
+    locationInput.value = "Current Location";
+    filterDoctors();
+    closeLocationPopup();
+}
+
+function onLocationError(error) {
+    if (error.code === 1) {
+        showLocationMessage("Location access was denied. You can enter your location manually.");
+    } else {
+        showLocationMessage("Unable to detect your location. Please enter your area manually.");
+    }
+}
+
+if (locationTrigger) {
+    const togglePopup = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (locationPopup.hidden) {
+            clearLocationMessage();
+            openLocationPopup();
+        } else {
+            closeLocationPopup();
+        }
+    };
+    locationTrigger.addEventListener("click", togglePopup);
+    if (locationInput) {
+        locationInput.addEventListener("click", function(event) {
+            event.stopPropagation();
+            if (locationPopup.hidden) {
+                clearLocationMessage();
+                openLocationPopup();
+            }
+        });
+    }
+}
+
+if (locationPopup) {
+    locationPopup.addEventListener("click", function (event) {
+        event.stopPropagation();
+    });
+}
+
+if (locationPopupClose) {
+    locationPopupClose.addEventListener("click", function () {
+        closeLocationPopup();
+    });
+}
+
+if (locationExamples) {
+    locationExamples.addEventListener("click", function (event) {
+        const chip = event.target.closest(".location-chip");
+        if (!chip) return;
+        locationManualInput.value = chip.textContent.trim();
+        clearLocationMessage();
+    });
+}
+
+if (locationApply) {
+    locationApply.addEventListener("click", function () {
+        const value = locationManualInput.value.trim();
+        if (!value) {
+            showLocationMessage("Please enter an area or locality.");
+            return;
+        }
+        applyLocation(value);
+    });
+}
+
+if (locationManualInput) {
+    locationManualInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            locationApply.click();
+        }
+    });
+    locationManualInput.addEventListener("input", clearLocationMessage);
+}
+
+if (locationUseCurrent) {
+    locationUseCurrent.addEventListener("click", function () {
+        clearLocationMessage();
+
+        if (!navigator || !navigator.geolocation) {
+            showLocationMessage("Location detection is not supported. Please enter your area manually.");
             return;
         }
 
-        const originalHTML = useLocationBtn.innerHTML;
-        useLocationBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span class="location-btn-text">Locating...</span>';
-        useLocationBtn.disabled = true;
+        showLocationMessage("Requesting your location...");
+        locationUseCurrent.disabled = true;
 
         navigator.geolocation.getCurrentPosition(
-            function (position) {
-                const lat = position.coords.latitude.toFixed(6);
-                const lng = position.coords.longitude.toFixed(6);
-
-                if (userLatInput) userLatInput.value = lat;
-                if (userLngInput) userLngInput.value = lng;
-                if (locationInput) {
-                    locationInput.value = "Current Location";
-                    locationInput.dataset.geolocated = "true";
-                }
-
-                useLocationBtn.innerHTML = originalHTML;
-                useLocationBtn.disabled = false;
-
-                if (searchForm) {
-                    searchForm.submit();
-                } else {
-                    const params = new URLSearchParams(window.location.search);
-                    params.set('user_lat', lat);
-                    params.set('user_lng', lng);
-                    params.set('location', 'Current Location');
-                    window.location.search = params.toString();
-                }
-            },
-            function (error) {
-                useLocationBtn.innerHTML = originalHTML;
-                useLocationBtn.disabled = false;
-                let message = "Could not obtain your location.";
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        message = "Location permission was denied. You can search for doctors by entering your city in the location box.";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        message = "Location information is currently unavailable. Please enter your city manually.";
-                        break;
-                    case error.TIMEOUT:
-                        message = "The request to get your location timed out. Please try again or enter your city manually.";
-                        break;
-                }
-                alert(message);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 60000
-            }
-        );
-    });
-}
-
-// Clear coordinates if patient types a city or locality manually
-if (locationInput) {
-    locationInput.addEventListener("input", function () {
-        const val = locationInput.value.toLowerCase().trim();
-        if (val !== "current location" && val !== "my location" && val !== "near me") {
-            if (userLatInput) userLatInput.value = "";
-            if (userLngInput) userLngInput.value = "";
-            delete locationInput.dataset.geolocated;
-        }
-    });
-}
-
-if (searchForm) {
-    searchForm.addEventListener("submit", function () {
-        const val = locationInput ? locationInput.value.toLowerCase().trim() : "";
-        if (val !== "current location" && val !== "my location" && val !== "near me") {
-            if (userLatInput) userLatInput.value = "";
-            if (userLngInput) userLngInput.value = "";
-            if (locationInput) delete locationInput.dataset.geolocated;
-        }
-    });
-}
-
-
-// =========================
-// SORT DOCTORS
-// =========================
-
-if (sortDoctors) sortDoctors.addEventListener(
-    "change",
-    function () {
-
-        const cards =
-            Array.from(doctorCards);
-
-
-        cards.sort(function (a, b) {
-
-            if (
-                sortDoctors.value ===
-                "experience"
-            ) {
-
-                return (
-                    Number(
-                        b.dataset.experience
-                    )
-                    -
-                    Number(
-                        a.dataset.experience
-                    )
-                );
-
-            }
-
-
-            if (
-                sortDoctors.value ===
-                "fee-low"
-            ) {
-
-                return (
-                    Number(a.dataset.fee)
-                    -
-                    Number(b.dataset.fee)
-                );
-
-            }
-
-
-            if (
-                sortDoctors.value ===
-                "fee-high"
-            ) {
-
-                return (
-                    Number(b.dataset.fee)
-                    -
-                    Number(a.dataset.fee)
-                );
-
-            }
-
-
-            return 0;
-
-        });
-
-
-        cards.forEach(
-            function (card) {
-
-                doctorsList.appendChild(card);
-
-            }
+            onLocationSuccess,
+            onLocationError,
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
         );
 
+        setTimeout(function () {
+            locationUseCurrent.disabled = false;
+        }, 1200);
+    });
+}
+
+document.addEventListener("click", function (event) {
+    if (locationPopup.hidden) return;
+    if (locationPopup.contains(event.target) || locationTrigger.contains(event.target)) return;
+    closeLocationPopup();
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && !locationPopup.hidden) {
+        closeLocationPopup();
     }
-);
-
-
-// =========================
-// MOBILE MENU
-// =========================
-
-if (mobileMenuBtn && mobileMenu) mobileMenuBtn.addEventListener(
-    "click",
-    function () {
-
-        mobileMenu.classList.toggle("show");
-
-    }
-);
+});

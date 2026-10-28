@@ -3,7 +3,6 @@ from accounts.models import User
 
 
 def current_user_context(request):
-    from accounts.models import User
     uid = request.session.get('user_id')
     if uid is None:
         return {'current_user': None}
@@ -24,17 +23,6 @@ def current_user(request: HttpRequest):
     except User.DoesNotExist:
         request.session.flush()
         return None
-
-
-def is_logged_in(request: HttpRequest) -> bool:
-    return current_user(request) is not None
-
-
-def role_name(request: HttpRequest) -> str:
-    user = current_user(request)
-    if user:
-        return user.role.role_name
-    return ''
 
 
 def login_required(view_func):
@@ -64,25 +52,9 @@ def role_required(*required_roles):
             if user is None:
                 messages.error(request, "Please log in to continue.")
                 return redirect('login')
-            user_role = user.role.role_name.lower()
-            if user_role not in required_roles:
+            if user.role.role_name.lower() not in required_roles:
                 messages.error(request, "You do not have permission to access this page.")
                 return redirect('login')
             return view_func(request, *args, **kwargs)
         return wrapper
     return decorator
-
-
-def role_dashboard(user: User):
-    role = user.role.role_name.lower()
-    if role == 'patient':
-        return 'patient_dashboard'
-    elif role == 'doctor':
-        return 'doctor_dashboard'
-    elif role == 'clinic':
-        return 'clinic_dashboard'
-    elif role == 'clinic staff':
-        return 'staff_dashboard'
-    elif role == 'admin':
-        return 'admin_dashboard'
-    return 'home'

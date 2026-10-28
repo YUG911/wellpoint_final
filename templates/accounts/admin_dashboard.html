@@ -36,123 +36,8 @@
         </div>
     </div>
 
-    <!-- Pending Doctor License Verifications -->
-    <div class="section" style="padding:20px 0 30px 0;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0;"><i class="fa-solid fa-certificate"></i> Doctor Medical License Requests ({{ pending_doctors|length }})</h3>
-        </div>
-        {% if pending_doctors %}
-        <div style="overflow-x:auto; background:#ffffff; border-radius:10px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-            <table class="dashboard-table" style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; font-size:13px; color:#475569;">
-                        <th style="padding:12px; text-align:left;">Doctor</th>
-                        <th style="padding:12px; text-align:left;">License / Reg No</th>
-                        <th style="padding:12px; text-align:left;">Issuing Authority</th>
-                        <th style="padding:12px; text-align:left;">Document</th>
-                        <th style="padding:12px; text-align:left;">Decision & Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doc in pending_doctors %}
-                    <tr style="border-bottom:1px solid #e2e8f0; font-size:14px;">
-                        <td style="padding:12px;">
-                            <strong>{{ doc.doctor_name }}</strong><br>
-                            <span style="font-size:12px; color:#64748b;">{{ doc.user.email }}</span>
-                        </td>
-                        <td style="padding:12px;"><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:600; font-size:13px;">{{ doc.license_number|default:"N/A" }}</span></td>
-                        <td style="padding:12px; color:#334155;">{{ doc.issuing_authority|default:"N/A" }}</td>
-                        <td style="padding:12px;">
-                            {% if doc.license_document %}
-                            <a href="{% url 'view_doctor_license_document' doc.doctor_id %}" target="_blank" class="btn btn-secondary" style="display:inline-block; padding:5px 10px; font-size:12px; background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; text-decoration:none;">
-                                <i class="fa-solid fa-file-pdf"></i> Review Doc
-                            </a>
-                            {% else %}
-                            <span style="color:#94a3b8; font-size:12px;">No Doc</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding:12px;">
-                            <form method="post" action="{% url 'verify_user' %}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                                {% csrf_token %}
-                                <input type="hidden" name="user_id" value="{{ doc.user.user_id }}">
-                                <input type="text" name="remarks" placeholder="Optional remark / rejection reason" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
-                                <button type="submit" name="action" value="approve" class="view-profile" style="background:#dcfce7; color:#16a34a; border:1px solid #86efac; cursor:pointer; font-weight:600; padding:6px 12px; border-radius:6px;">
-                                    <i class="fa-solid fa-check"></i> Approve
-                                </button>
-                                <button type="submit" name="action" value="reject" class="view-profile" style="background:#fee2e2; color:#991b2b; border:1px solid #fca5a5; cursor:pointer; font-weight:600; padding:6px 12px; border-radius:6px;">
-                                    <i class="fa-solid fa-xmark"></i> Reject
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="color:#64748b; margin:5px 0 0 0; font-size:14px;"><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> No pending doctor license verifications.</p>
-        {% endif %}
-    </div>
-
-    <!-- Pending Patient Photo ID Verifications -->
-    <div class="section" style="padding:10px 0 30px 0;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0;"><i class="fa-solid fa-id-card"></i> Patient Photo ID Requests ({{ pending_patients|length }})</h3>
-        </div>
-        {% if pending_patients %}
-        <div style="overflow-x:auto; background:#ffffff; border-radius:10px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-            <table class="dashboard-table" style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; font-size:13px; color:#475569;">
-                        <th style="padding:12px; text-align:left;">Patient</th>
-                        <th style="padding:12px; text-align:left;">Masked ID Number</th>
-                        <th style="padding:12px; text-align:left;">Document</th>
-                        <th style="padding:12px; text-align:left;">Decision & Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pat in pending_patients %}
-                    <tr style="border-bottom:1px solid #e2e8f0; font-size:14px;">
-                        <td style="padding:12px;">
-                            <strong>{{ pat.patient_name }}</strong><br>
-                            <span style="font-size:12px; color:#64748b;">{{ pat.user.email }}</span>
-                        </td>
-                        <td style="padding:12px;"><span style="background:#f1f5f9; color:#334155; padding:3px 8px; border-radius:4px; font-weight:600; font-size:13px;">{{ pat.masked_id_number }}</span></td>
-                        <td style="padding:12px;">
-                            {% if pat.id_document %}
-                            <a href="{% url 'view_patient_id_document' pat.patient_id %}" target="_blank" class="btn btn-secondary" style="display:inline-block; padding:5px 10px; font-size:12px; background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px; text-decoration:none;">
-                                <i class="fa-solid fa-file-pdf"></i> Review Doc
-                            </a>
-                            {% else %}
-                            <span style="color:#94a3b8; font-size:12px;">No Doc</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding:12px;">
-                            <form method="post" action="{% url 'verify_user' %}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                                {% csrf_token %}
-                                <input type="hidden" name="user_id" value="{{ pat.user.user_id }}">
-                                <input type="text" name="remarks" placeholder="Optional remark / rejection reason" style="padding:6px 10px; font-size:12px; border:1px solid #cbd5e1; border-radius:6px; min-width:200px;">
-                                <button type="submit" name="action" value="approve" class="view-profile" style="background:#dcfce7; color:#16a34a; border:1px solid #86efac; cursor:pointer; font-weight:600; padding:6px 12px; border-radius:6px;">
-                                    <i class="fa-solid fa-check"></i> Approve
-                                </button>
-                                <button type="submit" name="action" value="reject" class="view-profile" style="background:#fee2e2; color:#991b2b; border:1px solid #fca5a5; cursor:pointer; font-weight:600; padding:6px 12px; border-radius:6px;">
-                                    <i class="fa-solid fa-xmark"></i> Reject
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="color:#64748b; margin:5px 0 0 0; font-size:14px;"><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> No pending patient photo ID verifications.</p>
-        {% endif %}
-    </div>
-
-    <!-- General Pending User Accounts -->
-    <div class="section" style="padding:10px 0 40px 0;">
-        <h3>General Pending Accounts ({{ pending_verification }})</h3>
+    <div class="section" style="padding:40px 0;">
+        <h3>Pending Verification ({{ pending_verification }})</h3>
         {% if unverified_users %}
         <table class="dashboard-table" style="width:100%;border-collapse:collapse;">
             <thead>
@@ -170,8 +55,8 @@
                     <td style="padding:12px;">{{ u.email }}</td>
                     <td style="padding:12px;">{{ u.role.role_name }}</td>
                     <td style="padding:12px;">
-                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="approve"><button type="submit" class="view-profile" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;padding:5px 10px;border-radius:4px;">Approve</button></form>
-                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="reject"><button type="submit" class="view-profile" style="background:#fee2e2;color:#991b2b;border:none;cursor:pointer;padding:5px 10px;border-radius:4px;">Reject</button></form>
+                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="approve"><button type="submit" class="view-profile" style="background:#dcfce7;color:#16a34a;">Approve</button></form>
+                        <form method="post" action="{% url 'verify_user' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="user_id" value="{{ u.user_id }}"><input type="hidden" name="action" value="reject"><button type="submit" class="view-profile" style="background:#fee2e2;color:#991b2b;">Reject</button></form>
                     </td>
                 </tr>
                 {% endfor %}

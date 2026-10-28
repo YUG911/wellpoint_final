@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static clinic_extras %}
+{% load static %}
 {% get_media_prefix as MEDIA_URL %}
 {% load static %}
 {% block title %}My Prescriptions | WellPoint{% endblock %}
@@ -18,7 +18,7 @@
                 <div class="doctor-info">
                     <h3>Prescription #{{ pres.prescription_id }}</h3>
                     <p style="color:#64748b;font-size:13px;">
-                        <i class="fa-solid fa-user-doctor"></i> {{ pres.appointment.doctor.doctor_name|doctor_display }}
+                        <i class="fa-solid fa-user-doctor"></i> Dr. {{ pres.appointment.doctor.doctor_name }}
                     </p>
                     <p style="color:#64748b;font-size:13px;">
                         <i class="fa-solid fa-calendar"></i> {{ pres.appointment.appointment_date }}

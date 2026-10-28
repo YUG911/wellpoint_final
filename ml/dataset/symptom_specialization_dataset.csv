@@ -1,0 +1,602 @@
+# WellPoint educational training dataset - synthetic teaching rows, not real patient data
+symptoms,specialization
+"dizziness, rapid pulse, profuse sweating, high blood pressure, irregular heartbeat, swelling in legs",Cardiology
+"mood swings, lack of concentration, feeling hopeless, restlessness, loss of interest",Psychiatry
+"eye pain, double vision, redness in eyes",Ophthalmology
+"headache, loss of balance, weakness in limbs, tingling sensation, slurred speech",Neurology
+"weak urine stream, frequent urination, blood in urine",Urology
+"blood in urine, frequent urination, swollen feet, weak urine stream, lower abdominal pain",Urology
+"dizziness, weakness in limbs, memory loss, loss of balance, slurred speech, tremor",Neurology
+"skin infection, hair loss, nail infection, dry skin, skin discoloration",Dermatology
+"indigestion, acidity, blood in stool, vomiting, abdominal pain",Gastroenterology
+"muscle strain, unable to walk, joint stiffness, hip pain, bone fracture, joint pain",Orthopedics
+"fatigue, runny nose, sore throat, fever",General Medicine
+"muscle strain, unable to walk, joint stiffness, knee pain, back pain",Orthopedics
+"urinary urgency, lower abdominal pain, difficulty urinating, weak urine stream",Urology
+"lower abdominal pain, urinary urgency, swollen feet, kidney stone pain",Urology
+"throat irritation, sore throat, hearing loss, nose bleeding, sneezing",ENT
+"eye pain, burning eyes, night blindness, double vision",Ophthalmology
+"memory loss, weakness in limbs, numbness in limbs, tremor",Neurology
+"palpitations, swelling in legs, chest pain, rapid pulse",Cardiology
+"headache, loss of balance, slurred speech, numbness in limbs, weakness in limbs, memory loss",Neurology
+"watery eyes, blurred vision, eye discharge, eye pain, difficulty reading",Ophthalmology
+"hip pain, bone fracture, swelling in joint, joint pain, joint stiffness, muscle strain",Orthopedics
+"palpitations, dizziness, chest tightness, rapid pulse",Cardiology
+"indigestion, vomiting, abdominal pain, diarrhea, acidity, stomach cramps",Gastroenterology
+"muscle strain, joint stiffness, knee pain",Orthopedics
+"unable to walk, bone fracture, muscle strain, knee pain, shoulder pain",Orthopedics
+"nail infection, itching, skin rash, acne, eczema, dry skin",Dermatology
+"muscle strain, hip pain, bone fracture",Orthopedics
+"eczema, nail infection, skin infection",Dermatology
+"joint stiffness, joint pain, muscle strain, bone fracture, back pain, swelling in joint",Orthopedics
+"bone fracture, shoulder pain, swelling in joint, knee pain",Orthopedics
+"nail infection, itching, acne, dry skin, skin discoloration",Dermatology
+"sleep disturbance, restlessness, depression, anxiety, mood swings",Psychiatry
+"restlessness, anxiety, panic attacks, loss of interest",Psychiatry
+"blood in urine, swollen feet, urinary urgency, lower abdominal pain, frequent urination",Urology
+"itchy eyes, eye pain, eye discharge",Ophthalmology
+"watery eyes, eye discharge, night blindness, itchy eyes, redness in eyes, blurred vision",Ophthalmology
+"acidity, indigestion, blood in stool, stomach cramps",Gastroenterology
+"depression, lack of concentration, feeling hopeless",Psychiatry
+"hip pain, swelling in joint, back pain, bone fracture, joint pain, knee pain",Orthopedics
+"dizziness, tremor, seizures",Neurology
+"high blood pressure, profuse sweating, swelling in legs, irregular heartbeat",Cardiology
+"hip pain, knee pain, joint pain, swelling in joint, muscle strain, back pain",Orthopedics
+"skin rash, acne, dry skin, itching, boils",Dermatology
+"cold, loss of appetite, fever, sore throat, body ache, weakness",General Medicine
+"night blindness, burning eyes, double vision, eye pain, blurred vision",Ophthalmology
+"back pain, joint pain, swelling in joint, hip pain",Orthopedics
+"eye pain, watery eyes, double vision, difficulty reading",Ophthalmology
+"bone fracture, muscle strain, unable to walk, hip pain",Orthopedics
+"mouth ulcer, sore throat, sneezing, blocked nose, nose bleeding, enlarged tonsils",ENT
+"difficulty urinating, weak urine stream, lower abdominal pain, urinary urgency, blood in urine, swollen feet",Urology
+"ear pain, blocked nose, sore throat, throat irritation, sinus congestion, hearing loss",ENT
+"difficulty urinating, swollen feet, blood in urine, weak urine stream",Urology
+"throat irritation, enlarged tonsils, sore throat, mouth ulcer",ENT
+"cough, cold, fatigue, body ache, weakness",General Medicine
+"mouth ulcer, throat irritation, sneezing, nose bleeding, blocked nose",ENT
+"swelling in joint, unable to walk, joint stiffness, hip pain, bone fracture",Orthopedics
+"depression, mood swings, loss of interest, panic attacks",Psychiatry
+"loss of interest, panic attacks, restlessness, mood swings, depression, feeling hopeless",Psychiatry
+"redness in eyes, night blindness, difficulty reading, eye discharge",Ophthalmology
+"throat irritation, ear pain, mouth ulcer",ENT
+"breathlessness on exertion, profuse sweating, dizziness, chest pain, rapid pulse",Cardiology
+"hair loss, acne, dry skin, skin discoloration",Dermatology
+"bone fracture, swelling in joint, unable to walk, knee pain, hip pain, joint pain",Orthopedics
+"kidney stone pain, burning urination, difficulty urinating, urinary urgency, blood in urine, lower abdominal pain",Urology
+"redness in eyes, eye pain, difficulty reading",Ophthalmology
+"watery eyes, difficulty reading, burning eyes, redness in eyes, eye discharge, double vision",Ophthalmology
+"irritability, anxiety, lack of concentration, mood swings, restlessness",Psychiatry
+"skin infection, skin discoloration, dry skin, hair loss",Dermatology
+"body ache, fatigue, sore throat, runny nose, weakness",General Medicine
+"rapid pulse, swelling in legs, irregular heartbeat, profuse sweating, chest tightness, palpitations",Cardiology
+"kidney stone pain, burning urination, difficulty urinating, weak urine stream",Urology
+"sore throat, cold, cough, weakness",General Medicine
+"loss of balance, tingling sensation, weakness in limbs",Neurology
+"lack of concentration, restlessness, anxiety, sleep disturbance, panic attacks, irritability",Psychiatry
+"skin rash, acne, itching, skin infection",Dermatology
+"ear pain, sore throat, throat irritation",ENT
+"blood in urine, kidney stone pain, difficulty urinating",Urology
+"burning eyes, difficulty reading, redness in eyes",Ophthalmology
+"fever, cold, headache, body ache, sore throat, loss of appetite",General Medicine
+"nose bleeding, mouth ulcer, sneezing, enlarged tonsils, sinus congestion, ear pain",ENT
+"lower abdominal pain, blood in urine, frequent urination, urinary urgency",Urology
+"throat irritation, nose bleeding, blocked nose",ENT
+"eczema, skin infection, hair loss, skin rash, acne",Dermatology
+"anxiety, sleep disturbance, restlessness, panic attacks, loss of interest, lack of concentration",Psychiatry
+"hip pain, joint pain, knee pain, muscle strain",Orthopedics
+"skin discoloration, skin rash, dry skin, boils",Dermatology
+"high blood pressure, palpitations, rapid pulse, swelling in legs",Cardiology
+"loss of appetite, cold, runny nose, fever, cough",General Medicine
+"kidney stone pain, urinary urgency, blood in urine, lower abdominal pain, weak urine stream, burning urination",Urology
+"nose bleeding, sneezing, hearing loss, sore throat",ENT
+"profuse sweating, swelling in legs, irregular heartbeat, chest pain",Cardiology
+"constipation, stomach cramps, acidity, diarrhea, abdominal pain",Gastroenterology
+"sore throat, enlarged tonsils, nose bleeding, mouth ulcer, ear pain",ENT
+"memory loss, loss of balance, tingling sensation, slurred speech",Neurology
+"blood in urine, swollen feet, difficulty urinating, urinary urgency",Urology
+"blocked nose, sinus congestion, ear pain, mouth ulcer, enlarged tonsils, hearing loss",ENT
+"diarrhea, acidity, constipation",Gastroenterology
+"blood in urine, burning urination, kidney stone pain",Urology
+"sinus congestion, hearing loss, ear pain, throat irritation, enlarged tonsils, nose bleeding",ENT
+"abdominal pain, diarrhea, vomiting, nausea",Gastroenterology
+"weakness, sore throat, runny nose, fever",General Medicine
+"lack of concentration, panic attacks, irritability, anxiety, loss of interest, feeling hopeless",Psychiatry
+"abdominal pain, bloating, vomiting, nausea, acidity",Gastroenterology
+"ear pain, nose bleeding, sneezing",ENT
+"anxiety, loss of interest, feeling hopeless, mood swings, restlessness",Psychiatry
+"weakness in limbs, tingling sensation, dizziness",Neurology
+"nail infection, dry skin, boils, acne, hair loss, eczema",Dermatology
+"bone fracture, knee pain, joint stiffness, swelling in joint, joint pain",Orthopedics
+"body ache, fever, cough, headache, sore throat",General Medicine
+"palpitations, rapid pulse, high blood pressure, breathlessness on exertion",Cardiology
+"ear pain, mouth ulcer, sore throat, sneezing",ENT
+"burning urination, frequent urination, kidney stone pain, urinary urgency, weak urine stream, difficulty urinating",Urology
+"sleep disturbance, anxiety, restlessness, depression, loss of interest, mood swings",Psychiatry
+"high blood pressure, palpitations, dizziness, chest tightness",Cardiology
+"nose bleeding, ear pain, sore throat, sinus congestion, enlarged tonsils",ENT
+"itching, skin discoloration, dry skin, eczema",Dermatology
+"weakness in limbs, seizures, loss of balance, memory loss",Neurology
+"lack of concentration, irritability, mood swings, anxiety",Psychiatry
+"feeling hopeless, loss of interest, lack of concentration, irritability, panic attacks",Psychiatry
+"blood in urine, urinary urgency, frequent urination, weak urine stream",Urology
+"skin discoloration, skin infection, boils, itching, eczema",Dermatology
+"night blindness, difficulty reading, double vision, eye pain, blurred vision, eye discharge",Ophthalmology
+"blood in urine, weak urine stream, burning urination, swollen feet",Urology
+"skin infection, dry skin, boils",Dermatology
+"abdominal pain, bloating, stomach cramps",Gastroenterology
+"chest tightness, chest pain, high blood pressure, rapid pulse, swelling in legs, breathlessness on exertion",Cardiology
+"panic attacks, mood swings, lack of concentration",Psychiatry
+"swollen feet, difficulty urinating, lower abdominal pain, kidney stone pain, urinary urgency",Urology
+"blood in stool, indigestion, acidity, nausea",Gastroenterology
+"hair loss, eczema, nail infection, dry skin",Dermatology
+"blood in stool, acidity, nausea, stomach cramps, indigestion, abdominal pain",Gastroenterology
+"vomiting, nausea, blood in stool, stomach cramps, constipation, indigestion",Gastroenterology
+"dizziness, irregular heartbeat, chest tightness, swelling in legs, chest pain",Cardiology
+"skin rash, nail infection, hair loss, itching",Dermatology
+"lack of concentration, restlessness, sleep disturbance, feeling hopeless, panic attacks, loss of interest",Psychiatry
+"weakness in limbs, numbness in limbs, dizziness, loss of balance, tremor",Neurology
+"lower abdominal pain, swollen feet, frequent urination",Urology
+"blood in stool, abdominal pain, diarrhea, constipation, bloating, indigestion",Gastroenterology
+"blood in stool, nausea, abdominal pain, indigestion, stomach cramps, diarrhea",Gastroenterology
+"skin rash, skin infection, hair loss, skin discoloration, itching, nail infection",Dermatology
+"skin discoloration, nail infection, skin infection, dry skin, itching",Dermatology
+"sneezing, sinus congestion, ear pain, hearing loss, throat irritation, enlarged tonsils",ENT
+"kidney stone pain, difficulty urinating, urinary urgency, blood in urine, frequent urination, burning urination",Urology
+"rapid pulse, profuse sweating, high blood pressure, chest tightness",Cardiology
+"slurred speech, dizziness, memory loss, numbness in limbs",Neurology
+"itchy eyes, eye pain, eye discharge, double vision",Ophthalmology
+"nausea, blood in stool, vomiting, abdominal pain",Gastroenterology
+"tremor, memory loss, headache, dizziness, tingling sensation",Neurology
+"frequent urination, burning urination, swollen feet, difficulty urinating, urinary urgency, weak urine stream",Urology
+"swelling in legs, chest pain, rapid pulse, irregular heartbeat",Cardiology
+"mood swings, feeling hopeless, lack of concentration, depression, irritability, loss of interest",Psychiatry
+"swelling in legs, high blood pressure, breathlessness on exertion, dizziness, irregular heartbeat, chest tightness",Cardiology
+"numbness in limbs, seizures, weakness in limbs, tingling sensation",Neurology
+"numbness in limbs, headache, weakness in limbs, tremor, seizures",Neurology
+"irregular heartbeat, high blood pressure, chest tightness, palpitations, chest pain",Cardiology
+"nausea, indigestion, stomach cramps, constipation, diarrhea",Gastroenterology
+"itching, boils, acne, skin discoloration",Dermatology
+"weakness, fatigue, cough, sore throat",General Medicine
+"breathlessness on exertion, palpitations, rapid pulse, high blood pressure, chest pain",Cardiology
+"eye pain, itchy eyes, watery eyes, burning eyes, double vision",Ophthalmology
+"eczema, itching, skin rash, acne",Dermatology
+"loss of interest, anxiety, restlessness, feeling hopeless",Psychiatry
+"profuse sweating, chest pain, palpitations, rapid pulse, irregular heartbeat",Cardiology
+"loss of balance, tremor, dizziness, slurred speech, weakness in limbs",Neurology
+"lower abdominal pain, kidney stone pain, difficulty urinating, burning urination, weak urine stream",Urology
+"irritability, restlessness, depression, anxiety",Psychiatry
+"indigestion, abdominal pain, stomach cramps, constipation",Gastroenterology
+"dizziness, chest pain, irregular heartbeat, chest tightness",Cardiology
+"slurred speech, numbness in limbs, tingling sensation, seizures, dizziness",Neurology
+"indigestion, acidity, blood in stool, abdominal pain",Gastroenterology
+"sleep disturbance, depression, anxiety, irritability, loss of interest",Psychiatry
+"bone fracture, hip pain, joint stiffness, knee pain, muscle strain",Orthopedics
+"kidney stone pain, swollen feet, weak urine stream",Urology
+"double vision, burning eyes, watery eyes",Ophthalmology
+"dizziness, chest pain, breathlessness on exertion, rapid pulse, irregular heartbeat",Cardiology
+"itchy eyes, night blindness, redness in eyes, burning eyes, eye pain, eye discharge",Ophthalmology
+"skin rash, itching, eczema, dry skin, boils",Dermatology
+"hip pain, muscle strain, back pain, shoulder pain",Orthopedics
+"sore throat, fatigue, runny nose, body ache",General Medicine
+"nail infection, hair loss, dry skin, skin discoloration, skin rash, skin infection",Dermatology
+"sneezing, blocked nose, sinus congestion, mouth ulcer",ENT
+"nausea, constipation, stomach cramps, acidity, blood in stool",Gastroenterology
+"chest pain, dizziness, rapid pulse, profuse sweating",Cardiology
+"itchy eyes, difficulty reading, double vision, eye pain",Ophthalmology
+"acidity, diarrhea, bloating, blood in stool, nausea, abdominal pain",Gastroenterology
+"fatigue, body ache, cold, sore throat, fever, cough",General Medicine
+"constipation, indigestion, diarrhea, bloating",Gastroenterology
+"headache, dizziness, memory loss",Neurology
+"headache, body ache, weakness, fever",General Medicine
+"sinus congestion, blocked nose, nose bleeding, hearing loss",ENT
+"loss of interest, sleep disturbance, irritability, feeling hopeless, mood swings",Psychiatry
+"unable to walk, hip pain, swelling in joint, bone fracture",Orthopedics
+"irregular heartbeat, chest tightness, dizziness, breathlessness on exertion, rapid pulse, palpitations",Cardiology
+"cold, cough, weakness, body ache, fatigue, runny nose",General Medicine
+"eye discharge, eye pain, watery eyes, burning eyes, double vision, redness in eyes",Ophthalmology
+"skin discoloration, acne, skin infection, eczema",Dermatology
+"bloating, vomiting, abdominal pain, constipation",Gastroenterology
+"itchy eyes, night blindness, eye pain, burning eyes, watery eyes, difficulty reading",Ophthalmology
+"nail infection, eczema, boils, skin rash, dry skin",Dermatology
+"fatigue, sore throat, weakness, fever, loss of appetite, body ache",General Medicine
+"headache, cough, cold, body ache, fatigue, weakness",General Medicine
+"nausea, bloating, acidity, constipation, diarrhea",Gastroenterology
+"sore throat, cold, weakness, headache",General Medicine
+"diarrhea, bloating, blood in stool, stomach cramps, constipation, abdominal pain",Gastroenterology
+"joint pain, hip pain, joint stiffness, muscle strain",Orthopedics
+"memory loss, numbness in limbs, loss of balance, weakness in limbs, slurred speech, dizziness",Neurology
+"ear pain, sinus congestion, nose bleeding",ENT
+"redness in eyes, eye discharge, blurred vision, night blindness, burning eyes",Ophthalmology
+"irregular heartbeat, breathlessness on exertion, chest pain, profuse sweating, chest tightness",Cardiology
+"nausea, indigestion, diarrhea",Gastroenterology
+"tremor, dizziness, seizures, tingling sensation",Neurology
+"blood in stool, vomiting, abdominal pain",Gastroenterology
+"difficulty reading, burning eyes, double vision, eye pain, blurred vision",Ophthalmology
+"body ache, runny nose, cough, loss of appetite",General Medicine
+"knee pain, back pain, hip pain",Orthopedics
+"blood in urine, difficulty urinating, burning urination, urinary urgency",Urology
+"unable to walk, back pain, muscle strain, hip pain, shoulder pain",Orthopedics
+"palpitations, rapid pulse, chest tightness, dizziness, chest pain",Cardiology
+"bloating, constipation, nausea, vomiting, abdominal pain",Gastroenterology
+"hip pain, bone fracture, knee pain, joint stiffness, joint pain, swelling in joint",Orthopedics
+"dizziness, loss of balance, numbness in limbs",Neurology
+"stomach cramps, acidity, vomiting, blood in stool, constipation",Gastroenterology
+"nose bleeding, sinus congestion, sore throat, hearing loss, sneezing, ear pain",ENT
+"joint pain, swelling in joint, back pain",Orthopedics
+"shoulder pain, back pain, unable to walk, swelling in joint, joint stiffness, hip pain",Orthopedics
+"memory loss, headache, slurred speech, tingling sensation, dizziness",Neurology
+"irregular heartbeat, profuse sweating, chest tightness",Cardiology
+"numbness in limbs, slurred speech, tingling sensation, weakness in limbs, seizures",Neurology
+"vomiting, abdominal pain, indigestion, nausea, blood in stool",Gastroenterology
+"enlarged tonsils, nose bleeding, sinus congestion, blocked nose, mouth ulcer",ENT
+"dizziness, chest pain, irregular heartbeat, palpitations, breathlessness on exertion, high blood pressure",Cardiology
+"fatigue, sore throat, runny nose, cold, body ache",General Medicine
+"kidney stone pain, swollen feet, blood in urine, difficulty urinating, burning urination, weak urine stream",Urology
+"swelling in joint, back pain, knee pain, joint pain",Orthopedics
+"muscle strain, swelling in joint, joint pain, back pain, knee pain, shoulder pain",Orthopedics
+"rapid pulse, swelling in legs, high blood pressure, chest pain, breathlessness on exertion",Cardiology
+"irregular heartbeat, swelling in legs, profuse sweating",Cardiology
+"swollen feet, urinary urgency, burning urination, frequent urination, kidney stone pain, lower abdominal pain",Urology
+"watery eyes, double vision, eye discharge, night blindness, burning eyes",Ophthalmology
+"dizziness, chest tightness, swelling in legs",Cardiology
+"memory loss, slurred speech, dizziness, headache, loss of balance, tremor",Neurology
+"nose bleeding, ear pain, hearing loss",ENT
+"mouth ulcer, nose bleeding, ear pain, throat irritation",ENT
+"chest tightness, high blood pressure, swelling in legs, dizziness, breathlessness on exertion, palpitations",Cardiology
+"knee pain, joint stiffness, unable to walk, back pain, muscle strain, shoulder pain",Orthopedics
+"sore throat, fatigue, weakness, runny nose, body ache, headache",General Medicine
+"cold, headache, weakness",General Medicine
+"sore throat, runny nose, headache, loss of appetite",General Medicine
+"sinus congestion, enlarged tonsils, throat irritation, blocked nose, sore throat, hearing loss",ENT
+"loss of appetite, fever, sore throat, weakness, body ache",General Medicine
+"lack of concentration, sleep disturbance, loss of interest",Psychiatry
+"blood in stool, nausea, abdominal pain, bloating, acidity, vomiting",Gastroenterology
+"irregular heartbeat, swelling in legs, high blood pressure, dizziness, rapid pulse",Cardiology
+"knee pain, swelling in joint, joint pain, shoulder pain, bone fracture",Orthopedics
+"difficulty urinating, urinary urgency, lower abdominal pain, swollen feet",Urology
+"headache, cough, body ache, runny nose, sore throat, fatigue",General Medicine
+"stomach cramps, indigestion, acidity, abdominal pain, constipation",Gastroenterology
+"depression, irritability, lack of concentration, sleep disturbance, anxiety, feeling hopeless",Psychiatry
+"depression, anxiety, mood swings, restlessness",Psychiatry
+"depression, loss of interest, sleep disturbance, irritability, lack of concentration",Psychiatry
+"chest tightness, swelling in legs, rapid pulse, chest pain",Cardiology
+"abdominal pain, bloating, stomach cramps, vomiting, diarrhea",Gastroenterology
+"skin rash, acne, eczema, nail infection",Dermatology
+"watery eyes, difficulty reading, double vision, blurred vision",Ophthalmology
+"weakness, cold, fever",General Medicine
+"blood in urine, lower abdominal pain, urinary urgency, burning urination",Urology
+"cold, weakness, cough, fatigue",General Medicine
+"sore throat, ear pain, throat irritation, hearing loss, mouth ulcer, sneezing",ENT
+"burning urination, difficulty urinating, blood in urine",Urology
+"itching, hair loss, nail infection, boils, acne, skin rash",Dermatology
+"mouth ulcer, sneezing, hearing loss, throat irritation",ENT
+"dry skin, eczema, skin rash, skin infection, acne",Dermatology
+"memory loss, tingling sensation, headache, seizures, dizziness, numbness in limbs",Neurology
+"joint pain, joint stiffness, back pain, knee pain, shoulder pain, hip pain",Orthopedics
+"boils, dry skin, eczema, nail infection",Dermatology
+"blood in stool, constipation, stomach cramps, diarrhea",Gastroenterology
+"loss of interest, mood swings, sleep disturbance",Psychiatry
+"double vision, night blindness, watery eyes, eye discharge, redness in eyes",Ophthalmology
+"breathlessness on exertion, irregular heartbeat, high blood pressure, swelling in legs, profuse sweating, rapid pulse",Cardiology
+"difficulty reading, burning eyes, eye pain, night blindness, redness in eyes",Ophthalmology
+"fever, cold, weakness, body ache, fatigue",General Medicine
+"joint pain, hip pain, knee pain, back pain, muscle strain",Orthopedics
+"weak urine stream, blood in urine, swollen feet, difficulty urinating, lower abdominal pain",Urology
+"chest pain, palpitations, rapid pulse, irregular heartbeat",Cardiology
+"hearing loss, ear pain, sore throat, nose bleeding, enlarged tonsils",ENT
+"acidity, blood in stool, indigestion, constipation, bloating, nausea",Gastroenterology
+"panic attacks, restlessness, depression, feeling hopeless, lack of concentration, sleep disturbance",Psychiatry
+"depression, mood swings, anxiety, panic attacks, lack of concentration, irritability",Psychiatry
+"abdominal pain, vomiting, blood in stool, bloating",Gastroenterology
+"weakness, cold, runny nose, headache, fatigue",General Medicine
+"cold, weakness, sore throat, body ache, cough",General Medicine
+"high blood pressure, profuse sweating, breathlessness on exertion, irregular heartbeat, dizziness, chest pain",Cardiology
+"blood in urine, lower abdominal pain, urinary urgency, weak urine stream, difficulty urinating",Urology
+"indigestion, blood in stool, diarrhea, bloating",Gastroenterology
+"sinus congestion, mouth ulcer, hearing loss, blocked nose, enlarged tonsils",ENT
+"burning eyes, difficulty reading, eye pain",Ophthalmology
+"joint stiffness, muscle strain, back pain, knee pain",Orthopedics
+"cold, fatigue, runny nose, headache, body ache",General Medicine
+"lack of concentration, restlessness, panic attacks, loss of interest",Psychiatry
+"anxiety, feeling hopeless, irritability, mood swings, lack of concentration",Psychiatry
+"difficulty reading, night blindness, itchy eyes, redness in eyes, eye pain, eye discharge",Ophthalmology
+"abdominal pain, acidity, indigestion, vomiting, diarrhea",Gastroenterology
+"fever, body ache, headache, cough, weakness",General Medicine
+"acne, skin infection, boils",Dermatology
+"seizures, numbness in limbs, tingling sensation, slurred speech",Neurology
+"weakness, headache, fatigue",General Medicine
+"weak urine stream, urinary urgency, kidney stone pain, burning urination, swollen feet",Urology
+"joint stiffness, bone fracture, unable to walk, swelling in joint, joint pain, back pain",Orthopedics
+"cold, runny nose, headache, sore throat, weakness, body ache",General Medicine
+"watery eyes, redness in eyes, burning eyes, eye discharge, difficulty reading",Ophthalmology
+"feeling hopeless, anxiety, sleep disturbance, lack of concentration, loss of interest, depression",Psychiatry
+"itchy eyes, burning eyes, eye pain, eye discharge",Ophthalmology
+"memory loss, loss of balance, tremor, seizures, numbness in limbs, weakness in limbs",Neurology
+"joint stiffness, muscle strain, bone fracture, unable to walk, back pain",Orthopedics
+"boils, skin infection, itching, skin rash",Dermatology
+"joint pain, swelling in joint, muscle strain, shoulder pain",Orthopedics
+"swollen feet, burning urination, lower abdominal pain, weak urine stream",Urology
+"indigestion, abdominal pain, constipation, nausea, stomach cramps",Gastroenterology
+"panic attacks, sleep disturbance, irritability, restlessness",Psychiatry
+"mood swings, sleep disturbance, irritability, feeling hopeless, panic attacks",Psychiatry
+"mouth ulcer, hearing loss, throat irritation, nose bleeding, ear pain",ENT
+"numbness in limbs, tremor, seizures, slurred speech, tingling sensation",Neurology
+"acne, dry skin, itching, eczema, skin discoloration, boils",Dermatology
+"blocked nose, nose bleeding, enlarged tonsils, sinus congestion",ENT
+"skin infection, boils, acne, hair loss, skin rash",Dermatology
+"fever, body ache, runny nose",General Medicine
+"weakness in limbs, loss of balance, seizures, dizziness, numbness in limbs, tremor",Neurology
+"body ache, fever, sore throat",General Medicine
+"irregular heartbeat, rapid pulse, swelling in legs, profuse sweating",Cardiology
+"anxiety, irritability, mood swings, lack of concentration, feeling hopeless, panic attacks",Psychiatry
+"anxiety, mood swings, depression, lack of concentration",Psychiatry
+"night blindness, difficulty reading, burning eyes, eye pain, blurred vision",Ophthalmology
+"dizziness, numbness in limbs, loss of balance, seizures, memory loss",Neurology
+"weakness, fever, body ache, sore throat",General Medicine
+"muscle strain, shoulder pain, knee pain, hip pain",Orthopedics
+"sore throat, nose bleeding, mouth ulcer, enlarged tonsils, sinus congestion",ENT
+"back pain, hip pain, swelling in joint",Orthopedics
+"panic attacks, feeling hopeless, lack of concentration, restlessness, loss of interest",Psychiatry
+"constipation, abdominal pain, bloating",Gastroenterology
+"high blood pressure, chest pain, profuse sweating, irregular heartbeat",Cardiology
+"lower abdominal pain, kidney stone pain, swollen feet, blood in urine, weak urine stream, difficulty urinating",Urology
+"acidity, abdominal pain, vomiting, nausea, indigestion, blood in stool",Gastroenterology
+"watery eyes, blurred vision, eye pain, eye discharge, redness in eyes",Ophthalmology
+"hair loss, boils, itching, skin infection, dry skin",Dermatology
+"throat irritation, mouth ulcer, sore throat, nose bleeding, sneezing",ENT
+"hearing loss, nose bleeding, sneezing, sinus congestion",ENT
+"difficulty urinating, burning urination, kidney stone pain, swollen feet",Urology
+"throat irritation, hearing loss, sneezing, sore throat, enlarged tonsils, ear pain",ENT
+"tingling sensation, weakness in limbs, tremor, numbness in limbs, memory loss",Neurology
+"throat irritation, sneezing, enlarged tonsils",ENT
+"hair loss, itching, boils, skin discoloration, eczema",Dermatology
+"nose bleeding, blocked nose, mouth ulcer, hearing loss, ear pain",ENT
+"urinary urgency, lower abdominal pain, frequent urination, difficulty urinating",Urology
+"night blindness, eye pain, watery eyes, double vision, eye discharge",Ophthalmology
+"loss of balance, dizziness, numbness in limbs, weakness in limbs, seizures",Neurology
+"sinus congestion, mouth ulcer, sore throat, sneezing, blocked nose",ENT
+"difficulty urinating, lower abdominal pain, weak urine stream, frequent urination",Urology
+"eczema, boils, hair loss, skin rash, itching",Dermatology
+"tremor, seizures, headache",Neurology
+"bone fracture, knee pain, unable to walk, joint stiffness, joint pain",Orthopedics
+"ear pain, mouth ulcer, hearing loss, blocked nose, sneezing",ENT
+"dry skin, skin infection, hair loss, skin discoloration, eczema",Dermatology
+"feeling hopeless, anxiety, depression, mood swings, loss of interest",Psychiatry
+"dizziness, numbness in limbs, loss of balance, slurred speech, seizures, memory loss",Neurology
+"diarrhea, acidity, blood in stool, nausea, indigestion, vomiting",Gastroenterology
+"difficulty urinating, weak urine stream, blood in urine",Urology
+"loss of appetite, cough, body ache, fatigue, headache, runny nose",General Medicine
+"feeling hopeless, irritability, restlessness, lack of concentration, loss of interest",Psychiatry
+"loss of balance, seizures, slurred speech, weakness in limbs, memory loss",Neurology
+"eye pain, burning eyes, blurred vision, watery eyes, difficulty reading",Ophthalmology
+"rapid pulse, chest tightness, dizziness, high blood pressure, palpitations, chest pain",Cardiology
+"bone fracture, swelling in joint, back pain, joint pain, knee pain",Orthopedics
+"rapid pulse, profuse sweating, chest tightness, chest pain",Cardiology
+"dizziness, high blood pressure, rapid pulse, profuse sweating, breathlessness on exertion, chest tightness",Cardiology
+"skin infection, itching, hair loss, dry skin",Dermatology
+"burning urination, kidney stone pain, lower abdominal pain, weak urine stream",Urology
+"lack of concentration, anxiety, sleep disturbance, feeling hopeless, mood swings",Psychiatry
+"palpitations, breathlessness on exertion, dizziness, chest tightness",Cardiology
+"chest tightness, rapid pulse, palpitations, profuse sweating",Cardiology
+"weak urine stream, burning urination, urinary urgency, kidney stone pain, difficulty urinating",Urology
+"watery eyes, night blindness, burning eyes",Ophthalmology
+"loss of balance, slurred speech, headache, tremor",Neurology
+"loss of balance, tingling sensation, seizures",Neurology
+"tremor, memory loss, dizziness, slurred speech",Neurology
+"irritability, anxiety, feeling hopeless, loss of interest, mood swings",Psychiatry
+"tingling sensation, loss of balance, numbness in limbs, memory loss, headache",Neurology
+"abdominal pain, vomiting, diarrhea, indigestion, constipation, nausea",Gastroenterology
+"burning urination, kidney stone pain, lower abdominal pain, difficulty urinating, blood in urine",Urology
+"blurred vision, watery eyes, itchy eyes, eye discharge",Ophthalmology
+"lower abdominal pain, difficulty urinating, burning urination, blood in urine, swollen feet, weak urine stream",Urology
+"blurred vision, night blindness, itchy eyes, difficulty reading",Ophthalmology
+"frequent urination, urinary urgency, swollen feet, lower abdominal pain, weak urine stream, blood in urine",Urology
+"irregular heartbeat, chest pain, palpitations, rapid pulse, high blood pressure",Cardiology
+"dizziness, breathlessness on exertion, irregular heartbeat, chest tightness, high blood pressure",Cardiology
+"body ache, runny nose, weakness",General Medicine
+"boils, dry skin, nail infection, itching",Dermatology
+"chest pain, high blood pressure, chest tightness, rapid pulse, profuse sweating, irregular heartbeat",Cardiology
+"depression, restlessness, mood swings, sleep disturbance, lack of concentration, feeling hopeless",Psychiatry
+"unable to walk, joint pain, knee pain, swelling in joint, bone fracture",Orthopedics
+"shoulder pain, back pain, joint pain, knee pain",Orthopedics
+"burning eyes, redness in eyes, itchy eyes, night blindness, eye pain, double vision",Ophthalmology
+"burning urination, urinary urgency, swollen feet, kidney stone pain, lower abdominal pain, weak urine stream",Urology
+"mood swings, irritability, panic attacks, feeling hopeless, lack of concentration, loss of interest",Psychiatry
+"headache, weakness in limbs, tremor, tingling sensation, slurred speech",Neurology
+"slurred speech, seizures, tremor, numbness in limbs, loss of balance, memory loss",Neurology
+"watery eyes, difficulty reading, eye discharge, night blindness, redness in eyes, blurred vision",Ophthalmology
+"body ache, cough, headache",General Medicine
+"diarrhea, bloating, stomach cramps, abdominal pain, indigestion, blood in stool",Gastroenterology
+"mood swings, restlessness, lack of concentration, irritability, anxiety, loss of interest",Psychiatry
+"dizziness, headache, weakness in limbs, slurred speech",Neurology
+"skin rash, boils, skin infection",Dermatology
+"headache, tingling sensation, loss of balance",Neurology
+"feeling hopeless, restlessness, lack of concentration, depression, mood swings, anxiety",Psychiatry
+"rapid pulse, high blood pressure, swelling in legs, breathlessness on exertion, dizziness, irregular heartbeat",Cardiology
+"skin infection, boils, itching, skin rash, nail infection, hair loss",Dermatology
+"mouth ulcer, enlarged tonsils, throat irritation, blocked nose, sore throat, hearing loss",ENT
+"body ache, fever, fatigue, weakness, loss of appetite, cold",General Medicine
+"abdominal pain, acidity, constipation, diarrhea, vomiting, bloating",Gastroenterology
+"bone fracture, shoulder pain, back pain, joint pain, hip pain",Orthopedics
+"skin infection, acne, hair loss, skin discoloration, boils, skin rash",Dermatology
+"irregular heartbeat, chest pain, breathlessness on exertion, swelling in legs, dizziness, rapid pulse",Cardiology
+"irregular heartbeat, high blood pressure, swelling in legs, breathlessness on exertion, chest pain, palpitations",Cardiology
+"blocked nose, hearing loss, throat irritation",ENT
+"hearing loss, blocked nose, enlarged tonsils, sneezing, ear pain, sinus congestion",ENT
+"blurred vision, double vision, eye pain, difficulty reading",Ophthalmology
+"joint pain, muscle strain, unable to walk, joint stiffness, knee pain",Orthopedics
+"sore throat, fatigue, headache",General Medicine
+"nose bleeding, sinus congestion, enlarged tonsils, sneezing, ear pain",ENT
+"cough, sore throat, weakness, fever",General Medicine
+"dizziness, irregular heartbeat, breathlessness on exertion, high blood pressure, chest pain, rapid pulse",Cardiology
+"nail infection, skin infection, eczema, dry skin, boils, skin discoloration",Dermatology
+"double vision, night blindness, burning eyes, eye pain, eye discharge, redness in eyes",Ophthalmology
+"weakness in limbs, headache, tingling sensation, slurred speech, seizures",Neurology
+"throat irritation, hearing loss, sore throat, mouth ulcer, sneezing",ENT
+"feeling hopeless, sleep disturbance, panic attacks, anxiety",Psychiatry
+"itching, boils, skin discoloration, nail infection, dry skin",Dermatology
+"dry skin, acne, itching, skin discoloration, boils",Dermatology
+"lower abdominal pain, swollen feet, difficulty urinating, burning urination",Urology
+"muscle strain, swelling in joint, joint stiffness, knee pain",Orthopedics
+"skin infection, eczema, boils, acne, nail infection",Dermatology
+"panic attacks, feeling hopeless, irritability",Psychiatry
+"eye pain, watery eyes, difficulty reading",Ophthalmology
+"cough, fever, body ache, weakness, loss of appetite, headache",General Medicine
+"lack of concentration, panic attacks, restlessness, anxiety",Psychiatry
+"double vision, redness in eyes, watery eyes, night blindness",Ophthalmology
+"ear pain, blocked nose, nose bleeding, enlarged tonsils",ENT
+"burning eyes, eye pain, night blindness, itchy eyes, blurred vision",Ophthalmology
+"chest tightness, high blood pressure, rapid pulse",Cardiology
+"blood in urine, weak urine stream, urinary urgency, frequent urination, burning urination",Urology
+"fatigue, runny nose, weakness, loss of appetite, body ache",General Medicine
+"knee pain, muscle strain, unable to walk, shoulder pain, hip pain",Orthopedics
+"frequent urination, blood in urine, burning urination",Urology
+"itching, boils, dry skin, eczema, skin discoloration",Dermatology
+"double vision, blurred vision, watery eyes, night blindness",Ophthalmology
+"bone fracture, joint stiffness, unable to walk, shoulder pain, back pain",Orthopedics
+"weak urine stream, swollen feet, lower abdominal pain, urinary urgency, difficulty urinating, burning urination",Urology
+"back pain, swelling in joint, unable to walk, knee pain, joint pain, hip pain",Orthopedics
+"indigestion, bloating, diarrhea, blood in stool, nausea",Gastroenterology
+"difficulty urinating, blood in urine, swollen feet, weak urine stream, kidney stone pain, frequent urination",Urology
+"kidney stone pain, blood in urine, lower abdominal pain, swollen feet, urinary urgency",Urology
+"swelling in joint, hip pain, joint stiffness, shoulder pain, muscle strain, back pain",Orthopedics
+"tremor, seizures, numbness in limbs, headache, loss of balance",Neurology
+"seizures, dizziness, loss of balance, numbness in limbs, tingling sensation",Neurology
+"skin infection, dry skin, skin rash, itching",Dermatology
+"abdominal pain, constipation, nausea, bloating",Gastroenterology
+"irritability, sleep disturbance, lack of concentration, loss of interest",Psychiatry
+"weakness in limbs, loss of balance, memory loss, slurred speech",Neurology
+"high blood pressure, profuse sweating, rapid pulse, chest pain",Cardiology
+"dry skin, nail infection, skin discoloration",Dermatology
+"unable to walk, back pain, joint stiffness, shoulder pain",Orthopedics
+"vomiting, bloating, stomach cramps, indigestion, nausea",Gastroenterology
+"runny nose, weakness, sore throat, cough, loss of appetite",General Medicine
+"hair loss, itching, skin rash, skin infection, dry skin, skin discoloration",Dermatology
+"restlessness, mood swings, feeling hopeless, sleep disturbance, lack of concentration, loss of interest",Psychiatry
+"numbness in limbs, loss of balance, dizziness, memory loss",Neurology
+"constipation, indigestion, bloating, abdominal pain",Gastroenterology
+"lack of concentration, irritability, sleep disturbance",Psychiatry
+"eye discharge, eye pain, itchy eyes, redness in eyes, night blindness",Ophthalmology
+"acidity, bloating, nausea, abdominal pain, constipation",Gastroenterology
+"seizures, numbness in limbs, tremor, tingling sensation, headache, weakness in limbs",Neurology
+"high blood pressure, palpitations, profuse sweating, breathlessness on exertion",Cardiology
+"panic attacks, mood swings, irritability, feeling hopeless, sleep disturbance, loss of interest",Psychiatry
+"difficulty reading, blurred vision, itchy eyes, burning eyes, watery eyes",Ophthalmology
+"weakness, headache, cold, runny nose, fever, sore throat",General Medicine
+"unable to walk, bone fracture, back pain, shoulder pain",Orthopedics
+"loss of interest, mood swings, restlessness, irritability, panic attacks",Psychiatry
+"difficulty reading, redness in eyes, itchy eyes, double vision, watery eyes, eye pain",Ophthalmology
+"urinary urgency, frequent urination, weak urine stream, kidney stone pain, difficulty urinating",Urology
+"slurred speech, seizures, tingling sensation, headache",Neurology
+"night blindness, difficulty reading, double vision",Ophthalmology
+"sore throat, fatigue, runny nose, fever, body ache",General Medicine
+"abdominal pain, diarrhea, indigestion, blood in stool",Gastroenterology
+"dry skin, eczema, boils, skin infection, itching, skin rash",Dermatology
+"blood in stool, bloating, constipation, abdominal pain, indigestion, nausea",Gastroenterology
+"constipation, diarrhea, nausea, blood in stool, abdominal pain, vomiting",Gastroenterology
+"dizziness, breathlessness on exertion, high blood pressure, swelling in legs",Cardiology
+"frequent urination, blood in urine, lower abdominal pain, swollen feet",Urology
+"loss of appetite, runny nose, cough, sore throat, fatigue, fever",General Medicine
+"ear pain, sneezing, mouth ulcer, sinus congestion",ENT
+"blurred vision, difficulty reading, night blindness, burning eyes, double vision, watery eyes",Ophthalmology
+"depression, lack of concentration, anxiety, restlessness",Psychiatry
+"watery eyes, night blindness, blurred vision, itchy eyes, double vision, eye discharge",Ophthalmology
+"chest pain, rapid pulse, breathlessness on exertion",Cardiology
+"blurred vision, double vision, burning eyes",Ophthalmology
+"blocked nose, enlarged tonsils, hearing loss",ENT
+"indigestion, nausea, diarrhea, constipation",Gastroenterology
+"acidity, bloating, stomach cramps, constipation, indigestion, nausea",Gastroenterology
+"seizures, tingling sensation, memory loss, headache",Neurology
+"seizures, dizziness, slurred speech, memory loss",Neurology
+"swelling in joint, unable to walk, knee pain, joint pain",Orthopedics
+"chest pain, irregular heartbeat, chest tightness",Cardiology
+"sinus congestion, blocked nose, sneezing, ear pain, hearing loss",ENT
+"stomach cramps, nausea, constipation, acidity, indigestion, blood in stool",Gastroenterology
+"muscle strain, swelling in joint, joint pain, shoulder pain, unable to walk",Orthopedics
+"mouth ulcer, sinus congestion, sore throat, throat irritation, blocked nose, sneezing",ENT
+"headache, runny nose, weakness, fatigue, fever, body ache",General Medicine
+"panic attacks, lack of concentration, sleep disturbance, restlessness",Psychiatry
+"slurred speech, headache, dizziness, loss of balance, tingling sensation",Neurology
+"skin infection, skin discoloration, skin rash, eczema, boils",Dermatology
+"watery eyes, burning eyes, double vision, eye pain, itchy eyes, redness in eyes",Ophthalmology
+"ear pain, sinus congestion, nose bleeding, hearing loss, sneezing, throat irritation",ENT
+"blood in urine, lower abdominal pain, swollen feet, urinary urgency",Urology
+"blocked nose, ear pain, sneezing, mouth ulcer, enlarged tonsils",ENT
+"night blindness, blurred vision, burning eyes",Ophthalmology
+"numbness in limbs, loss of balance, slurred speech",Neurology
+"muscle strain, joint pain, knee pain, joint stiffness",Orthopedics
+"unable to walk, knee pain, joint stiffness, swelling in joint, hip pain",Orthopedics
+"blood in stool, nausea, abdominal pain, acidity, indigestion",Gastroenterology
+"acne, dry skin, skin rash",Dermatology
+"mouth ulcer, hearing loss, sneezing, nose bleeding, sore throat",ENT
+"sinus congestion, ear pain, mouth ulcer",ENT
+"enlarged tonsils, sinus congestion, nose bleeding, hearing loss, sneezing, mouth ulcer",ENT
+"eye discharge, burning eyes, eye pain, difficulty reading",Ophthalmology
+"stomach cramps, indigestion, vomiting, bloating, constipation",Gastroenterology
+"mouth ulcer, enlarged tonsils, ear pain, nose bleeding, sinus congestion, hearing loss",ENT
+"shoulder pain, muscle strain, joint stiffness",Orthopedics
+"high blood pressure, irregular heartbeat, swelling in legs, chest tightness, palpitations",Cardiology
+"hair loss, boils, itching, acne, skin rash",Dermatology
+"skin discoloration, itching, skin rash, dry skin, acne, skin infection",Dermatology
+"runny nose, loss of appetite, sore throat, cough, cold",General Medicine
+"nose bleeding, sneezing, enlarged tonsils, ear pain, hearing loss",ENT
+"tingling sensation, tremor, seizures",Neurology
+"swollen feet, kidney stone pain, urinary urgency, difficulty urinating",Urology
+"depression, anxiety, irritability, sleep disturbance",Psychiatry
+"seizures, slurred speech, loss of balance, numbness in limbs, weakness in limbs, headache",Neurology
+"loss of interest, anxiety, lack of concentration, restlessness",Psychiatry
+"skin infection, skin discoloration, boils, eczema, acne, itching",Dermatology
+"swollen feet, kidney stone pain, urinary urgency, burning urination",Urology
+"eye discharge, watery eyes, burning eyes",Ophthalmology
+"sneezing, ear pain, mouth ulcer",ENT
+"abdominal pain, indigestion, blood in stool, bloating, constipation, acidity",Gastroenterology
+"weakness, headache, cold, loss of appetite",General Medicine
+"profuse sweating, breathlessness on exertion, irregular heartbeat, swelling in legs, chest pain",Cardiology
+"tremor, numbness in limbs, tingling sensation, weakness in limbs, loss of balance, dizziness",Neurology
+"fever, fatigue, sore throat, weakness",General Medicine
+"blurred vision, difficulty reading, watery eyes, redness in eyes",Ophthalmology
+"hip pain, muscle strain, joint stiffness",Orthopedics
+"sore throat, sneezing, enlarged tonsils",ENT
+"loss of balance, headache, weakness in limbs, dizziness, seizures, tremor",Neurology
+"fatigue, fever, runny nose, weakness",General Medicine
+"dry skin, hair loss, skin rash, nail infection",Dermatology
+"stomach cramps, bloating, blood in stool, constipation, nausea, diarrhea",Gastroenterology
+"fever, cold, weakness, headache, loss of appetite",General Medicine
+"profuse sweating, rapid pulse, high blood pressure, irregular heartbeat",Cardiology
+"runny nose, cold, sore throat, loss of appetite, weakness",General Medicine
+"cold, fatigue, loss of appetite, fever, runny nose, cough",General Medicine
+"weakness, runny nose, cough, cold",General Medicine
+"slurred speech, weakness in limbs, memory loss, tremor",Neurology
+"diarrhea, bloating, acidity, abdominal pain, constipation",Gastroenterology
+"swelling in legs, irregular heartbeat, profuse sweating, breathlessness on exertion, chest tightness",Cardiology
+"double vision, blurred vision, redness in eyes, itchy eyes, difficulty reading",Ophthalmology
+"bone fracture, knee pain, muscle strain, hip pain",Orthopedics
+"fever, cold, cough, runny nose",General Medicine
+"unable to walk, swelling in joint, hip pain, shoulder pain, joint stiffness",Orthopedics
+"restlessness, depression, panic attacks, anxiety, lack of concentration, mood swings",Psychiatry
+"mood swings, panic attacks, feeling hopeless, loss of interest, depression",Psychiatry
+"night blindness, watery eyes, blurred vision, difficulty reading, eye pain, burning eyes",Ophthalmology
+"slurred speech, tremor, numbness in limbs",Neurology
+"eczema, skin infection, boils, skin rash",Dermatology
+"kidney stone pain, lower abdominal pain, weak urine stream",Urology
+"knee pain, back pain, shoulder pain",Orthopedics
+"abdominal pain, constipation, acidity",Gastroenterology
+"swollen feet, lower abdominal pain, difficulty urinating",Urology
+"sinus congestion, blocked nose, ear pain, hearing loss",ENT
+"nail infection, dry skin, eczema, skin rash",Dermatology
+"unable to walk, back pain, joint stiffness, hip pain, bone fracture",Orthopedics
+"dry skin, eczema, skin infection, acne, hair loss",Dermatology
+"body ache, sore throat, fever, cough",General Medicine
+"kidney stone pain, urinary urgency, lower abdominal pain, burning urination",Urology
+"weakness, headache, cough, fatigue, runny nose, fever",General Medicine
+"seizures, numbness in limbs, slurred speech, loss of balance",Neurology
+"burning urination, kidney stone pain, weak urine stream",Urology
+"double vision, eye discharge, eye pain, blurred vision, difficulty reading",Ophthalmology
+"sleep disturbance, restlessness, feeling hopeless, mood swings, loss of interest",Psychiatry
+"irregular heartbeat, chest tightness, rapid pulse, breathlessness on exertion, palpitations, profuse sweating",Cardiology
+"weak urine stream, blood in urine, swollen feet, frequent urination, kidney stone pain, urinary urgency",Urology
+"double vision, difficulty reading, blurred vision, redness in eyes",Ophthalmology
+"depression, mood swings, sleep disturbance",Psychiatry
+"skin discoloration, skin rash, acne, hair loss, eczema, nail infection",Dermatology
+"sneezing, nose bleeding, throat irritation, ear pain, enlarged tonsils, blocked nose",ENT

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load static clinic_extras %}
+{% load static %}
 {% block title %}Profile | WellPoint{% endblock %}
 {% block content %}
 <div class="page-container" style="padding:40px 30px;">
     <div class="section-heading">
         <h2>Doctor Profile</h2>
-        <p>Welcome, {{ doctor.doctor_name|doctor_display }}!</p>
+        <p>Welcome, Dr. {{ doctor.doctor_name }}!</p>
     </div>
 
     <div class="doctor-profile-card" style="padding:30px;">
@@ -20,7 +20,7 @@
             </div>
             <div class="doctor-profile-meta">
                 <span><i class="fa-solid fa-briefcase-medical"></i> {{ doctor.experience }} Years</span>
-                <span><i class="fa-solid fa-indian-rupee"></i> New: &#8377;{{ doctor.new_patient_fee }} | Old: &#8377;{{ doctor.old_patient_fee }}</span>
+                <span><i class="fa-solid fa-indian-rupee"></i> New: &#8376;{{ doctor.new_patient_fee }} | Old: &#8376;{{ doctor.old_patient_fee }}</span>
                 {% for clinic in clinics %}
                 <span><i class="fa-solid fa-hospital"></i> {{ clinic.clinic.clinic_name }}</span>
                 {% endfor %}
@@ -36,72 +36,6 @@
             <div style="margin-top:20px;">
                 <h3>About</h3>
                 <p style="color:#64748b;">{{ doctor.about|default:"No information provided." }}</p>
-            </div>
-
-            <!-- Medical License & Verification Section -->
-            <div id="license-section" style="margin-top:25px; padding:20px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                    <h3 style="margin:0;"><i class="fa-solid fa-id-card"></i> Medical License Verification</h3>
-                    {% if doctor.license_verification_status == 'Approved' %}
-                    <span class="badge badge-success" style="padding:6px 14px; font-weight:600; border-radius:20px; background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Approved</span>
-                    {% elif doctor.license_verification_status == 'Rejected' %}
-                    <span class="badge badge-danger" style="padding:6px 14px; font-weight:600; border-radius:20px; background:#fee2e2; color:#b91c1c;"><i class="fa-solid fa-circle-xmark"></i> Rejected</span>
-                    {% else %}
-                    <span class="badge badge-warning" style="padding:6px 14px; font-weight:600; border-radius:20px; background:#fef3c7; color:#b45309;"><i class="fa-solid fa-clock"></i> Verification Pending</span>
-                    {% endif %}
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px; margin-top:10px;">
-                    <div>
-                        <span style="font-size:12px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">License / Reg Number</span>
-                        <strong style="color:#1e293b; font-size:15px;">{{ doctor.license_number|default:"Not Provided" }}</strong>
-                    </div>
-                    <div>
-                        <span style="font-size:12px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">Issuing Authority</span>
-                        <strong style="color:#1e293b; font-size:15px;">{{ doctor.issuing_authority|default:"Not Provided" }}</strong>
-                    </div>
-                    <div>
-                        <span style="font-size:12px; color:#64748b; text-transform:uppercase; font-weight:600; display:block;">License Document</span>
-                        {% if doctor.license_document %}
-                        <a href="{% url 'view_doctor_license_document' doctor.doctor_id %}" target="_blank" class="btn btn-secondary" style="display:inline-block; margin-top:4px; padding:6px 12px; font-size:13px;">
-                            <i class="fa-solid fa-file-pdf"></i> View Submitted Document
-                        </a>
-                        {% else %}
-                        <span style="color:#94a3b8; font-size:13px; display:block; margin-top:6px;">No document uploaded</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                {% if doctor.license_verification_status == 'Rejected' %}
-                <div style="margin-top:18px; padding:16px; background:#fff1f2; border:1px solid #fecdd3; border-radius:8px;">
-                    <div style="color:#be123c; font-weight:600; margin-bottom:6px; font-size:14px;">
-                        <i class="fa-solid fa-circle-exclamation"></i> Rejection Reason
-                    </div>
-                    <p style="color:#9f1239; margin:0 0 16px 0; font-size:14px;">{{ doctor.rejection_reason|default:"The submitted license document could not be verified. Please review the details and upload a valid document." }}</p>
-
-                    <h4 style="margin:12px 0 10px 0; font-size:14px; color:#334155;">Resubmit Medical License Details</h4>
-                    <form method="POST" action="{% url 'resubmit_doctor_license' %}" enctype="multipart/form-data" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:flex-end;">
-                        {% csrf_token %}
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:13px; font-weight:500; display:block; margin-bottom:4px;">License Number *</label>
-                            <input type="text" name="license_number" class="form-control" value="{{ doctor.license_number }}" required style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:13px; font-weight:500; display:block; margin-bottom:4px;">Issuing Authority *</label>
-                            <input type="text" name="issuing_authority" class="form-control" value="{{ doctor.issuing_authority }}" required style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:13px; font-weight:500; display:block; margin-bottom:4px;">New License Document (PDF/Image)</label>
-                            <input type="file" name="license_document" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;">
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-primary" style="padding:9px 18px; font-weight:600; border-radius:6px;">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> Resubmit for Review
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
