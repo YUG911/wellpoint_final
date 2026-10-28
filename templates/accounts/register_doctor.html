@@ -14,7 +14,7 @@
             <div class="register-content">
                 <h1>Doctor Profile</h1>
                 <p>Add your professional details.</p>
-                <form method="post">{% csrf_token %}
+                <form method="post" enctype="multipart/form-data">{% csrf_token %}
                     {% if form.errors %}<div class="error">{{ form.errors }}</div>{% endif %}
 
                     <div class="form-group">
@@ -23,19 +23,39 @@
                         {{ form.doctor_name.errors }}
                     </div>
 
+                    <div class="form-row" style="display:flex; flex-wrap:wrap; gap:15px;">
+                        <div class="form-group" style="flex: 1 1 200px;">
+                            <label for="id_license_number">Medical License / Reg No.</label>
+                            {{ form.license_number }}
+                            {{ form.license_number.errors }}
+                        </div>
+                        <div class="form-group" style="flex: 1 1 200px;">
+                            <label for="id_issuing_authority">Issuing Authority</label>
+                            {{ form.issuing_authority }}
+                            {{ form.issuing_authority.errors }}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_license_document">License Document Proof</label>
+                        {{ form.license_document }}
+                        <small style="color:#64748b;font-size:12px;margin-top:4px;display:block;">Upload valid registration / license certificate (PDF, JPG, PNG). Stored in secure, non-public storage.</small>
+                        {{ form.license_document.errors }}
+                    </div>
+
                     <div class="form-group">
                         <label for="id_experience">Years of Experience</label>
                         {{ form.experience }}
                         {{ form.experience.errors }}
                     </div>
 
-                    <div class="form-row" style="display:flex;gap:15px;">
-                        <div class="form-group" style="flex:1;">
+                    <div class="form-row" style="display:flex; flex-wrap:wrap; gap:15px;">
+                        <div class="form-group" style="flex: 1 1 200px;">
                             <label for="id_new_patient_fee">New Patient Fee (₹)</label>
                             {{ form.new_patient_fee }}
                             {{ form.new_patient_fee.errors }}
                         </div>
-                        <div class="form-group" style="flex:1;">
+                        <div class="form-group" style="flex: 1 1 200px;">
                             <label for="id_old_patient_fee">Old Patient Fee (₹)</label>
                             {{ form.old_patient_fee }}
                             {{ form.old_patient_fee.errors }}
@@ -61,7 +81,7 @@
                     </div>
 
                     <button type="submit" class="create-account-button"><span>Complete Registration</span><i class="fa-solid fa-arrow-right"></i></button>
-                    <p class="signup-text">Your account will be verified by an admin.</p>
+                    <p class="signup-text">Your medical license will be reviewed by an administrator before approval.</p>
                 </form>
             </div>
         </div>

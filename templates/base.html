@@ -16,15 +16,20 @@
 </head>
 <body>
     {% if messages %}
-    <div class="announcement-bar" id="msgBox">
-        <div class="container">
+    <div class="announcement-bar" id="msgBox" style="position: relative;">
+        <div class="container" style="display: flex; justify-content: center; align-items: center;">
+            <div>
             {% for message in messages %}
                 <i class="fa-solid fa-info"></i> {{ message }}
             {% endfor %}
+            </div>
+            <button onclick="document.getElementById('msgBox').style.display='none'" style="position: absolute; right: 20px; background: transparent; border: none; color: inherit; cursor: pointer; font-size: 16px;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
     </div>
     <script>
-        setTimeout(function(){ document.getElementById('msgBox').style.display='none'; }, 5000);
+        setTimeout(function(){ const box = document.getElementById('msgBox'); if(box) box.style.display='none'; }, 8000);
     </script>
     {% endif %}
 

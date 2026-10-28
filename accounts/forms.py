@@ -1,6 +1,7 @@
 from django import forms
-from accounts.models import User, Role, StateMaster, CityMaster
-from doctors.models import SpecializationMaster, QualificationMaster
+from accounts.models import User, Role, Patient, Clinic, ClinicStaff, Admin, StateMaster, CityMaster
+from doctors.models import Doctor, SpecializationMaster, QualificationMaster
+from accounts.validators import validate_document_file
 
 
 class LoginForm(forms.Form):
@@ -21,8 +22,8 @@ class RegisterForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email address'})
     )
-    contact_number = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your phone number'})
+    contact_number = forms.IntegerField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric', 'placeholder': 'Enter your contact_number number'})
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Create a strong password'})
@@ -55,9 +56,9 @@ class RegisterForm(forms.Form):
         return email
 
     def clean_contact_number(self):
-        contact_number= self.cleaned_data['contact_number']
+        contact_number = self.cleaned_data['contact_number']
         if User.objects.filter(contact_number=contact_number).exists():
-            raise forms.ValidationError("Contact number already registered.")
+            raise forms.ValidationError("Phone number already registered.")
         return contact_number
 
 
@@ -79,7 +80,23 @@ class PatientProfileForm(forms.Form):
     ],
     widget=forms.Select(attrs={'class': 'form-control'})
 )
-    emergency_contact = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    emergency_contact = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    photo_id = forms.FileField(
+        required=False,
+        validators=[validate_document_file],
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.jpg,.jpeg,.png,.pdf'})
+    )
+    id_number = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Govt ID / Passport Number (optional)'})
+    )
+
+    def clean_photo_id(self):
+        photo_id = self.cleaned_data.get('photo_id')
+        if photo_id:
+            validate_document_file(photo_id)
+        return photo_id
 
 
 class DoctorProfileForm(forms.Form):
@@ -88,6 +105,21 @@ class DoctorProfileForm(forms.Form):
     new_patient_fee = forms.DecimalField(max_digits=10, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     old_patient_fee = forms.DecimalField(max_digits=10, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     about = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
+    license_number = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. MCI-12345 or State Council Reg No.'})
+    )
+    issuing_authority = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. National Medical Commission / State Medical Council'})
+    )
+    license_document = forms.FileField(
+        required=False,
+        validators=[validate_document_file],
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.jpg,.jpeg,.png,.pdf'})
+    )
     specializations = forms.ModelMultipleChoiceField(
         queryset=SpecializationMaster.objects.all(),
         widget=forms.CheckboxSelectMultiple
@@ -97,13 +129,19 @@ class DoctorProfileForm(forms.Form):
         widget=forms.CheckboxSelectMultiple
     )
 
+    def clean_license_document(self):
+        license_document = self.cleaned_data.get('license_document')
+        if license_document:
+            validate_document_file(license_document)
+        return license_document
+
 
 class ClinicForm(forms.Form):
     clinic_name = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control'}))
     address = forms.CharField(max_length=500, widget=forms.TextInput(attrs={'class': 'form-control'}))
     state = forms.ModelChoiceField(queryset=StateMaster.objects.all(), widget=forms.Select(attrs={'class': 'form-control'}))
     city = forms.ModelChoiceField(queryset=CityMaster.objects.none(), widget=forms.Select(attrs={'class': 'form-control'}))
-    contact_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
+    contact_number = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control', 'inputmode': 'numeric'}))
     latitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     longitude = forms.DecimalField(max_digits=10, decimal_places=7, required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
 
@@ -112,6 +150,19 @@ class ClinicForm(forms.Form):
         state_id = self.data.get('state') or self.initial.get('state')
         if state_id:
             self.fields['city'].queryset = CityMaster.objects.filter(state_id=state_id).order_by('city_name')
+
+
+class ClinicHoursForm(forms.Form):
+    day_1_open = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+    day_1_close = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+    # ... etc for each day
+
+
+class AdminForm(forms.Form):
+    access_level = forms.ChoiceField(choices=[
+        ('super', 'Super Admin'),
+        ('manager', 'Manager')
+    ], widget=forms.Select(attrs={'class': 'form-control'}))
 
 
 class UserProfileForm(forms.ModelForm):

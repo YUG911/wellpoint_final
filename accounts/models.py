@@ -16,7 +16,7 @@ class User(models.Model):
     user_id = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=100)
     email = models.CharField(max_length=100, unique=True)
-    contact_number = models.CharField(max_length=10, null=True, blank=True)
+    contact_number = models.CharField(max_length=10, unique=True)
     password_hash = models.CharField(max_length=255)
     address = models.TextField(null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE, db_column='role_id')
@@ -66,7 +66,7 @@ class Clinic(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'clinics'    
+        db_table = 'clinics'
 
     def __str__(self):
         return self.clinic_name
@@ -97,6 +97,9 @@ class ClinicHours(models.Model):
         return f"{self.clinic.clinic_name} - {self.day.day_name}"
 
 
+from accounts.storage import protected_storage
+
+
 class Patient(models.Model):
     patient_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, db_column='user_id')
@@ -104,6 +107,10 @@ class Patient(models.Model):
     gender = models.CharField(max_length=20, null=True, blank=True)
     blood_group = models.CharField(max_length=10, null=True, blank=True)
     emergency_contact = models.CharField(max_length=10, null=True, blank=True)
+    id_document = models.FileField(upload_to='patient_ids/', storage=protected_storage, null=True, blank=True)
+    id_number = models.CharField(max_length=50, null=True, blank=True)
+    id_verification_status = models.CharField(max_length=20, default='Pending')
+    id_rejection_reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -112,6 +119,15 @@ class Patient(models.Model):
 
     def __str__(self):
         return self.user.full_name
+
+    @property
+    def masked_id_number(self):
+        if not self.id_number:
+            return ""
+        clean_num = str(self.id_number).strip()
+        if len(clean_num) <= 4:
+            return "****"
+        return f"{'*' * (len(clean_num) - 4)}{clean_num[-4:]}"
 
 
 class ClinicStaff(models.Model):

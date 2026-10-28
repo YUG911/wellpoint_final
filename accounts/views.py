@@ -1,74 +1,94 @@
-from datetime import date, datetime
+import mimetypes
+from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
+from django.core.exceptions import ValidationError
+from django.http import Http404, HttpResponseForbidden, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.forms import (
     LoginForm, RegisterForm, PatientProfileForm,
-    DoctorProfileForm, ClinicForm, UserProfileForm
+    DoctorProfileForm, ClinicForm, AdminForm, UserProfileForm
 )
+from accounts.validators import validate_document_file
 from accounts.models import (
-    User, Patient, Clinic, ClinicStaff, Admin, ClinicHours,
+    User, Role, Patient, Clinic, ClinicStaff, Admin,
     CityMaster, StateMaster, DayMaster
 )
-from doctors.models import Doctor, Review, SpecializationMaster
-from appointments.models import Appointment
-from accounts.context_processors import login_required, role_required, current_user
+from doctors.models import Doctor, DoctorAvailability, Review, SpecializationMaster, QualificationMaster
+from appointments.models import Appointment, Payment
+from records.models import PatientRecord, Prescription, Report
 
 
-def redirect_user_dashboard(user):
-    role = user.role.role_name.lower()
-    if role == 'patient':
-        return redirect('patient_dashboard')
-    if role == 'doctor':
-        return redirect('doctor_dashboard')
-    if role == 'clinic':
-        return redirect('clinic_dashboard')
-    if role == 'clinic staff':
-        return redirect('staff_dashboard')
-    if role == 'admin':
-        return redirect('admin_dashboard')
-    return redirect('home')
-
-
+# ─── HOME ───────────────────────────────────────────────────────
 def home(request):
-    user = current_user(request)
-    if user:
-        return redirect_user_dashboard(user)
-
-    doctors = Doctor.objects.all()[:3]
-    specializations = SpecializationMaster.objects.all()
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
+    from doctors.models import Doctor, SpecializationMaster
+    doctors = Doctor.objects.filter(
+        user__account_status__iexact='active',
+        user__is_verified=True,
+        doctor_clinic__isnull=False,
+        doctoravailability__isnull=False
+    ).distinct()[:3]
+    specializations_list = SpecializationMaster.objects.all()
     return render(request, 'home.html', {
         'doctors': doctors,
-        'specializations': specializations,
+        'specializations': specializations_list,
     })
 
 
+# ─── AUTHENTICATION ─────────────────────────────────────────────
 
 def login_view(request):
-    user = current_user(request)
-    if user:
-        return redirect_user_dashboard(user)
-
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             try:
-                user = User.objects.select_related('role').get(email__iexact=email.strip())
+                user = User.objects.select_related('role').get(email=email)
             except User.DoesNotExist:
                 messages.error(request, "Invalid email or password.")
                 return render(request, 'accounts/login.html', {'form': form})
 
             if check_password(password, user.password_hash):
-                if (user.account_status or '').strip().lower() != 'active':
+                if user.account_status.lower() != 'active':
                     messages.error(request, "Your account is not active.")
                     return render(request, 'accounts/login.html', {'form': form})
+
+                role_lower = user.role.role_name.lower()
+                if role_lower in {'doctor', 'clinic', 'clinic staff'} and not user.is_verified:
+                    if role_lower == 'doctor':
+                        from doctors.models import Doctor
+                        doctor = Doctor.objects.filter(user=user).first()
+                        if doctor and doctor.license_verification_status == 'Rejected':
+                            pass
+                        else:
+                            messages.warning(request, "Your account is pending administrative verification. Please wait for approval before logging in.")
+                            return render(request, 'accounts/login.html', {'form': form})
+                    else:
+                        messages.warning(request, "Your account is pending administrative verification. Please wait for approval before logging in.")
+                        return render(request, 'accounts/login.html', {'form': form})
 
                 request.session['user_id'] = user.user_id
                 messages.success(request, f"Welcome back, {user.full_name}!")
 
-                return redirect_user_dashboard(user)
+                role = user.role.role_name.lower()
+                if role == 'patient':
+                    return redirect('patient_dashboard')
+                if role == 'doctor':
+                    return redirect('doctor_dashboard')
+                if role == 'clinic':
+                    return redirect('clinic_dashboard')
+                if role == 'clinic staff':
+                    return redirect('staff_dashboard')
+                if role == 'admin':
+                    return redirect('admin_dashboard')
+                return redirect('home')
             else:
                 messages.error(request, "Invalid email or password.")
                 return render(request, 'accounts/login.html', {'form': form})
@@ -83,12 +103,12 @@ def logout_view(request):
     return redirect('home')
 
 
+# ─── REGISTRATION ───────────────────────────────────────────────
 
 def register(request):
-    user = current_user(request)
-    if user:
-        return redirect_user_dashboard(user)
-
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -121,19 +141,27 @@ def register(request):
 
 
 def register_patient(request):
-    user_id = request.session.get('reg_user_id')
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
-        form = PatientProfileForm(request.POST)
+        form = PatientProfileForm(request.POST, request.FILES)
         if form.is_valid():
             user = get_object_or_404(User, user_id=user_id)
+            photo_id_file = form.cleaned_data.get('photo_id')
+            id_num = form.cleaned_data.get('id_number', '').strip()
             Patient.objects.create(
                 user=user,
                 date_of_birth=form.cleaned_data['date_of_birth'],
                 gender=form.cleaned_data['gender'],
                 blood_group=form.cleaned_data['blood_group'],
-                emergency_contact=form.cleaned_data['emergency_contact']
+                emergency_contact=form.cleaned_data['emergency_contact'],
+                id_document=photo_id_file,
+                id_number=id_num,
+                id_verification_status='Pending'
             )
             del request.session['reg_user_id']
             del request.session['reg_role']
@@ -145,11 +173,14 @@ def register_patient(request):
 
 
 def register_doctor(request):
-    user_id = request.session.get('reg_user_id')
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
-        form = DoctorProfileForm(request.POST)
+        form = DoctorProfileForm(request.POST, request.FILES)
         if form.is_valid():
             user = get_object_or_404(User, user_id=user_id)
             doctor = Doctor.objects.create(
@@ -158,7 +189,11 @@ def register_doctor(request):
                 experience=form.cleaned_data.get('experience'),
                 new_patient_fee=form.cleaned_data['new_patient_fee'],
                 old_patient_fee=form.cleaned_data['old_patient_fee'],
-                about=form.cleaned_data.get('about', '')
+                about=form.cleaned_data.get('about', ''),
+                license_number=form.cleaned_data.get('license_number', '').strip(),
+                issuing_authority=form.cleaned_data.get('issuing_authority', '').strip(),
+                license_document=form.cleaned_data.get('license_document'),
+                license_verification_status='Pending'
             )
             from doctors.models import DoctorSpecialization, DoctorQualification
             for spec in form.cleaned_data['specializations']:
@@ -175,7 +210,10 @@ def register_doctor(request):
 
 
 def register_clinic(request):
-    user_id = request.session.get('reg_user_id')
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
     if not user_id:
         return redirect('register')
     states = StateMaster.objects.all()
@@ -196,7 +234,7 @@ def register_clinic(request):
             )
             del request.session['reg_user_id']
             del request.session['reg_role']
-            messages.success(request, "Registration complete! Please log in.")
+            messages.success(request, "Registration complete! Your clinic account is pending admin verification.")
             return redirect('login')
     else:
         form = ClinicForm()
@@ -204,29 +242,49 @@ def register_clinic(request):
 
 
 def register_staff(request):
-    user_id = request.session.get('reg_user_id')
-    if not user_id:
+    redirect_url = redirect_based_on_role(request)
+    if redirect_url:
+        return redirect(redirect_url)
+    user_id = request.session.get('reg_user_id') or request.session.get('user_id')
+    user = None
+    if user_id:
+        user = User.objects.filter(user_id=user_id).first()
+    if not user or user.role.role_name.lower() != 'clinic staff':
+        messages.error(request, "Please register as Clinic Staff first.")
         return redirect('register')
     if request.method == 'POST':
         clinic_id = request.POST.get('clinic')
-        user = get_object_or_404(User, user_id=user_id)
         clinic = get_object_or_404(Clinic, clinic_id=clinic_id)
         ClinicStaff.objects.create(user=user, clinic=clinic)
-        del request.session['reg_user_id']
-        del request.session['reg_role']
-        messages.success(request, "Registration complete! Please log in.")
+        if 'reg_user_id' in request.session:
+            del request.session['reg_user_id']
+        if 'reg_role' in request.session:
+            del request.session['reg_role']
+        messages.success(request, "Registration complete! Your staff account is pending admin verification.")
         return redirect('login')
     clinics = Clinic.objects.all()
     return render(request, 'accounts/register_staff.html', {'clinics': clinics})
 
 
+# ─── DECORATORS ─────────────────────────────────────────────────
 
+from accounts.context_processors import login_required, role_required, current_user
+
+
+def get_user_obj(request):
+    return current_user(request)
+
+
+# ─── PATIENT DASHBOARD ──────────────────────────────────────────
 
 @login_required
 @role_required('patient')
 def patient_dashboard(request):
-    user = current_user(request)
-    patient = get_object_or_404(Patient, user=user)
+    user = get_user_obj(request)
+    patient = Patient.objects.filter(user=user).first()
+    if not patient:
+        messages.warning(request, 'Please complete your patient profile.')
+        return redirect('register_patient')
 
     pending = Appointment.objects.filter(patient=patient, status__in=['Pending', 'Confirmed'])
     completed = Appointment.objects.filter(patient=patient, status='Completed')
@@ -240,20 +298,29 @@ def patient_dashboard(request):
     return render(request, 'accounts/patient_dashboard.html', context)
 
 
+# ─── DOCTOR DASHBOARD ───────────────────────────────────────────
 
 @login_required
 @role_required('doctor')
 def doctor_dashboard(request):
-    user = current_user(request)
-    doctor = get_object_or_404(Doctor, user=user)
+    user = get_user_obj(request)
+    doctor = Doctor.objects.filter(user=user).first()
+    if not doctor:
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        messages.warning(request, 'Please complete your doctor profile.')
+        return redirect('register_doctor')
 
-    today = date.today()
-    todays_appointments = Appointment.objects.filter(doctor=doctor, appointment_date=today)
+    from django.utils import timezone
+    today = timezone.localdate()
+    todays_appointments = Appointment.objects.filter(
+        doctor=doctor, appointment_date=today
+    ).select_related('patient__user', 'clinic').order_by('appointment_time')
     upcoming = Appointment.objects.filter(
         doctor=doctor,
         appointment_date__gte=today,
         status__in=['Pending', 'Confirmed']
-    )
+    ).select_related('patient__user', 'clinic').order_by('appointment_date', 'appointment_time')
     completed = Appointment.objects.filter(doctor=doctor, status='Completed')
     reviews = Review.objects.filter(doctor=doctor)
 
@@ -264,7 +331,7 @@ def doctor_dashboard(request):
     context = {
         'doctor': doctor,
         'todays_appointments': todays_appointments,
-        'upcoming_appointments': upcoming[:5],
+        'upcoming_appointments': upcoming[:10],
         'total_appointments': Appointment.objects.filter(doctor=doctor).count(),
         'completed_count': completed.count(),
         'avg_rating': round(total_rating, 1),
@@ -272,28 +339,102 @@ def doctor_dashboard(request):
     return render(request, 'doctors/doctor_dashboard.html', context)
 
 
+# ─── CLINIC DASHBOARD ───────────────────────────────────────────
 
 @login_required
 @role_required('clinic')
 def clinic_dashboard(request):
-    user = current_user(request)
-    clinic = get_object_or_404(Clinic, user=user)
-    doctors = Doctor.objects.filter(doctor_clinic__clinic=clinic).distinct()
+    user = get_user_obj(request)
+    clinic = Clinic.objects.filter(user=user).first()
+    if not clinic:
+        messages.warning(request, 'Please complete your clinic profile.')
+        return redirect('register_clinic')
+
+    if request.method == 'POST':
+        return add_clinic_doctor(request)
+
+    from doctors.models import Doctor
+    doctors = Doctor.objects.filter(doctor_clinic__clinic=clinic).prefetch_related('doctor_specialization__specialization')
+    available_doctors = Doctor.objects.filter(
+        user__is_verified=True,
+        user__account_status='active'
+    ).exclude(
+        doctor_clinic__clinic=clinic
+    ).prefetch_related('doctor_specialization__specialization').order_by('doctor_name')
 
     context = {
         'clinic': clinic,
         'doctors': doctors,
-        'clinic_hours_count': ClinicHours.objects.filter(clinic=clinic).count(),
+        'available_doctors': available_doctors,
     }
     return render(request, 'accounts/clinic_dashboard.html', context)
 
 
+@login_required
+@role_required('clinic')
+def add_clinic_doctor(request):
+    user = get_user_obj(request)
+    clinic = Clinic.objects.filter(user=user).first()
+    if not clinic:
+        messages.warning(request, 'Please complete your clinic profile.')
+        return redirect('register_clinic')
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method. Doctor associations must be submitted via POST.')
+        return redirect('clinic_dashboard')
+
+    # Security check: clinic cannot modify another clinic's associations
+    submitted_clinic_id = request.POST.get('clinic_id')
+    if submitted_clinic_id and str(submitted_clinic_id).strip() != str(clinic.clinic_id):
+        messages.error(request, 'Unauthorized action: You cannot modify associations for another clinic.')
+        return redirect('clinic_dashboard')
+
+    raw_doctor_id = request.POST.get('doctor_id', '').strip()
+    if not raw_doctor_id:
+        messages.error(request, 'Invalid doctor selection. Please choose a valid doctor.')
+        return redirect('clinic_dashboard')
+
+    try:
+        doctor_id = int(raw_doctor_id)
+    except (ValueError, TypeError):
+        messages.error(request, 'Invalid doctor ID format.')
+        return redirect('clinic_dashboard')
+
+    from doctors.models import Doctor, DoctorClinic
+    try:
+        doctor = Doctor.objects.select_related('user').get(doctor_id=doctor_id)
+    except Doctor.DoesNotExist:
+        messages.error(request, 'Selected doctor does not exist.')
+        return redirect('clinic_dashboard')
+
+    if not doctor.user.is_verified:
+        messages.error(request, 'This doctor is pending administrative verification and cannot be associated yet.')
+        return redirect('clinic_dashboard')
+
+    if doctor.user.account_status.lower() != 'active':
+        messages.error(request, "This doctor's account is not active and cannot be associated.")
+        return redirect('clinic_dashboard')
+
+    assoc, created = DoctorClinic.objects.get_or_create(doctor=doctor, clinic=clinic)
+    doc_display = doctor.doctor_name if doctor.doctor_name.startswith("Dr.") else f"Dr. {doctor.doctor_name}"
+    if created:
+        messages.success(request, f"Successfully associated {doc_display} with {clinic.clinic_name}.")
+    else:
+        messages.warning(request, f"{doc_display} is already associated with {clinic.clinic_name}.")
+
+    return redirect('clinic_dashboard')
+
+
+# ─── STAFF DASHBOARD ────────────────────────────────────────────
 
 @login_required
 @role_required('clinic staff')
 def staff_dashboard(request):
-    user = current_user(request)
-    staff = get_object_or_404(ClinicStaff, user=user)
+    user = get_user_obj(request)
+    staff = ClinicStaff.objects.filter(user=user).first()
+    if not staff:
+        messages.warning(request, 'Please complete your staff profile.')
+        return redirect('register_staff')
     clinic = staff.clinic
     appointments = Appointment.objects.filter(clinic=clinic)
 
@@ -301,20 +442,29 @@ def staff_dashboard(request):
         'staff': staff,
         'clinic': clinic,
         'appointments': appointments[:10],
-        'completed_count': appointments.filter(status='Completed').count(),
     }
     return render(request, 'accounts/staff_dashboard.html', context)
 
 
+# ─── ADMIN DASHBOARD ────────────────────────────────────────────
 
 @login_required
 @role_required('admin')
 def admin_dashboard(request):
     verified = User.objects.filter(is_verified=True).count()
-    pending = User.objects.filter(is_verified=False).count()
+    pending = User.objects.filter(is_verified=False).exclude(account_status='rejected').count()
     total_patients = User.objects.filter(role__role_name='Patient').count()
     total_doctors = User.objects.filter(role__role_name='Doctor').count()
     total_clinics = User.objects.filter(role__role_name='Clinic').count()
+
+    from doctors.models import Doctor
+    pending_doctors = Doctor.objects.filter(
+        license_verification_status='Pending'
+    ).select_related('user').order_by('-created_at')
+
+    pending_patients = Patient.objects.filter(
+        id_verification_status='Pending'
+    ).exclude(id_document='').exclude(id_document__isnull=True).select_related('user').order_by('-created_at')
 
     context = {
         'total_users': User.objects.count(),
@@ -323,23 +473,41 @@ def admin_dashboard(request):
         'total_patients': total_patients,
         'total_doctors': total_doctors,
         'total_clinics': total_clinics,
-        'unverified_users': User.objects.filter(is_verified=False)[:5],
+        'unverified_users': User.objects.filter(is_verified=False).exclude(account_status='rejected')[:10],
+        'pending_doctors': pending_doctors,
+        'pending_patients': pending_patients,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
 
+# ─── PROFILE ────────────────────────────────────────────────────
 
 @login_required
 def profile(request):
-    user = current_user(request)
+    user = get_user_obj(request)
     form = UserProfileForm(request.POST or None, instance=user)
+    patient = None
+    doctor = None
+    role_lower = user.role.role_name.lower()
+    if role_lower == 'patient':
+        patient = Patient.objects.filter(user=user).first()
+    elif role_lower == 'doctor':
+        from doctors.models import Doctor
+        doctor = Doctor.objects.filter(user=user).first()
+
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Your profile has been updated.')
         return redirect('profile')
-    return render(request, 'accounts/profile.html', {'user': user, 'form': form})
+    return render(request, 'accounts/profile.html', {
+        'user': user,
+        'form': form,
+        'patient': patient,
+        'doctor': doctor,
+    })
 
 
+# ─── VERIFICATION ───────────────────────────────────────────────
 
 @login_required
 @role_required('admin')
@@ -347,7 +515,7 @@ def verify_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         action = request.POST.get('action')
-        remarks = request.POST.get('remarks', '')
+        remarks = request.POST.get('remarks', '').strip()
         target = get_object_or_404(User, user_id=user_id)
         admin = get_object_or_404(Admin, user=current_user(request))
 
@@ -359,14 +527,142 @@ def verify_user(request):
         VerificationLog.objects.create(
             user=target, admin=admin, status=status, remarks=remarks
         )
+
+        from doctors.models import Doctor
+        doc = Doctor.objects.filter(user=target).first()
+        pat = Patient.objects.filter(user=target).first()
+
         if action == 'approve':
             target.is_verified = True
-            target.save()
+            target.account_status = 'active'
+            target.save(update_fields=['is_verified', 'account_status'])
+            if doc:
+                doc.license_verification_status = 'Approved'
+                doc.rejection_reason = ''
+                doc.save(update_fields=['license_verification_status', 'rejection_reason'])
+            if pat:
+                pat.id_verification_status = 'Approved'
+                pat.id_rejection_reason = ''
+                pat.save(update_fields=['id_verification_status', 'id_rejection_reason'])
+            messages.success(request, f"User {target.full_name} {status.lower()}.")
         else:
-            target.account_status = 'rejected'
-            target.save()
-        messages.success(request, f"User {target.full_name} {status.lower()}.")
+            target.is_verified = False
+            if doc:
+                target.account_status = 'active'
+                target.save(update_fields=['is_verified', 'account_status'])
+                doc.license_verification_status = 'Rejected'
+                doc.rejection_reason = remarks or 'Medical license verification rejected by administrator.'
+                doc.save(update_fields=['license_verification_status', 'rejection_reason'])
+            elif pat:
+                target.account_status = 'active'
+                target.save(update_fields=['is_verified', 'account_status'])
+                pat.id_verification_status = 'Rejected'
+                pat.id_rejection_reason = remarks or 'Photo ID verification rejected by administrator.'
+                pat.save(update_fields=['id_verification_status', 'id_rejection_reason'])
+            else:
+                target.account_status = 'rejected'
+                target.save(update_fields=['is_verified', 'account_status'])
+            messages.success(request, f"User {target.full_name} {status.lower()}.")
     return redirect('admin_dashboard')
+
+
+# ─── SECURE DOCUMENT ACCESS ─────────────────────────────────────
+
+@login_required
+def view_patient_id_document(request, patient_id):
+    user = current_user(request)
+    patient = get_object_or_404(Patient, patient_id=patient_id)
+    is_admin = (user.role.role_name.lower() == 'admin')
+    is_owner = (patient.user_id == user.user_id)
+    if not (is_admin or is_owner):
+        return HttpResponseForbidden("You are not authorized to view this document.")
+    if not patient.id_document or not patient.id_document.name:
+        raise Http404("Document not found.")
+    try:
+        content_type, _ = mimetypes.guess_type(patient.id_document.name)
+        return FileResponse(patient.id_document.open('rb'), content_type=content_type or 'application/octet-stream')
+    except (FileNotFoundError, ValueError, OSError):
+        raise Http404("Document file could not be found.")
+
+
+@login_required
+def view_doctor_license_document(request, doctor_id):
+    user = current_user(request)
+    from doctors.models import Doctor
+    doctor = get_object_or_404(Doctor, doctor_id=doctor_id)
+    is_admin = (user.role.role_name.lower() == 'admin')
+    is_owner = (doctor.user_id == user.user_id)
+    if not (is_admin or is_owner):
+        return HttpResponseForbidden("You are not authorized to view this document.")
+    if not doctor.license_document or not doctor.license_document.name:
+        raise Http404("Document not found.")
+    try:
+        content_type, _ = mimetypes.guess_type(doctor.license_document.name)
+        return FileResponse(doctor.license_document.open('rb'), content_type=content_type or 'application/octet-stream')
+    except (FileNotFoundError, ValueError, OSError):
+        raise Http404("Document file could not be found.")
+
+
+@login_required
+@role_required('patient')
+def upload_patient_id(request):
+    user = current_user(request)
+    patient = get_object_or_404(Patient, user=user)
+    if request.method == 'POST':
+        photo_id_file = request.FILES.get('photo_id')
+        id_num = request.POST.get('id_number', '').strip()
+        if not photo_id_file:
+            messages.error(request, "Please choose a photo ID file to upload.")
+            return redirect('profile')
+        try:
+            validate_document_file(photo_id_file)
+        except ValidationError as e:
+            messages.error(request, e.message)
+            return redirect('profile')
+
+        patient.id_document = photo_id_file
+        if id_num:
+            patient.id_number = id_num
+        patient.id_verification_status = 'Pending'
+        patient.id_rejection_reason = ''
+        patient.save()
+        messages.success(request, "Photo ID submitted successfully for administrative review.")
+    return redirect('profile')
+
+
+@login_required
+@role_required('doctor')
+def resubmit_doctor_license(request):
+    user = current_user(request)
+    from doctors.models import Doctor
+    doctor = get_object_or_404(Doctor, user=user)
+    if request.method == 'POST':
+        license_num = request.POST.get('license_number', '').strip()
+        authority = request.POST.get('issuing_authority', '').strip()
+        doc_file = request.FILES.get('license_document')
+
+        referer = request.META.get('HTTP_REFERER', '')
+        redirect_target = 'profile' if 'profile' in referer and 'doctor_profile' not in referer else 'doctor_profile'
+
+        if not license_num or not authority:
+            messages.error(request, "License number and issuing authority are required.")
+            return redirect(redirect_target)
+
+        if doc_file:
+            try:
+                validate_document_file(doc_file)
+            except ValidationError as e:
+                messages.error(request, e.message)
+                return redirect(redirect_target)
+            doctor.license_document = doc_file
+
+        doctor.license_number = license_num
+        doctor.issuing_authority = authority
+        doctor.license_verification_status = 'Pending'
+        doctor.rejection_reason = ''
+        doctor.save()
+        messages.success(request, "Medical license details submitted for verification. Please wait for administrator review.")
+    return redirect('doctor_dashboard')
 
 
 def get_cities(request):
@@ -396,7 +692,23 @@ def verification_history(request):
 @role_required('clinic', 'clinic staff')
 def clinic_appointments(request):
     user = current_user(request)
-    clinic = Clinic.objects.filter(user=user).first() or get_object_or_404(ClinicStaff, user=user).clinic
+    role = user.role.role_name.lower()
+    clinic = None
+    if role == 'clinic':
+        clinic = Clinic.objects.filter(user=user).first()
+        if not clinic:
+            messages.warning(request, 'Please complete your clinic profile.')
+            return redirect('register_clinic')
+    elif role == 'clinic staff':
+        staff = ClinicStaff.objects.filter(user=user).first()
+        if not staff:
+            messages.warning(request, 'Please complete your staff profile.')
+            return redirect('register_staff')
+        clinic = staff.clinic
+    else:
+        messages.error(request, 'Unauthorized.')
+        return redirect('home')
+
     appointments = Appointment.objects.filter(clinic=clinic).select_related('patient__user', 'doctor').order_by('-appointment_date', '-appointment_time')
     return render(request, 'accounts/clinic_appointments.html', {'clinic': clinic, 'appointments': appointments})
 
@@ -405,65 +717,61 @@ def clinic_appointments(request):
 @login_required
 @role_required('clinic')
 def clinic_profile(request):
-    clinic = get_object_or_404(Clinic, user=current_user(request))
+    clinic = Clinic.objects.filter(user=current_user(request)).first()
+    if not clinic:
+        messages.warning(request, 'Please complete your clinic profile.')
+        return redirect('register_clinic')
     if request.method == 'POST':
-        clinic.clinic_name = request.POST.get('clinic_name', clinic.clinic_name).strip()
-        clinic.address = request.POST.get('address', clinic.address).strip()
-        clinic.contact_number = request.POST.get('contact_number', clinic.contact_number).strip()
+        name = request.POST.get('clinic_name', '').strip()
+        address = request.POST.get('address', '').strip()
+        contact = request.POST.get('contact_number', '').strip()
+
+        if not name or not address or not contact:
+            messages.error(request, 'All fields are required.')
+            return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})
+
+        try:
+            contact_int = int(contact)
+        except ValueError:
+            messages.error(request, 'Please enter a valid numeric contact number.')
+            return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})
+
+        clinic.clinic_name = name
+        clinic.address = address
+        clinic.contact_number = contact_int
         clinic.save(update_fields=['clinic_name', 'address', 'contact_number', 'updated_at'])
         messages.success(request, 'Clinic profile updated.')
         return redirect('clinic_profile')
     return render(request, 'accounts/clinic_profile.html', {'clinic': clinic})
 
 
-@login_required
-@role_required('clinic')
-def clinic_hours(request):
-    clinic = get_object_or_404(Clinic, user=current_user(request))
-    days = DayMaster.objects.all().order_by('day_id')
-
-    if request.method == 'POST':
-        for day in days:
-            open_value = request.POST.get(f'open_{day.day_id}', '').strip()
-            close_value = request.POST.get(f'close_{day.day_id}', '').strip()
-
-            if not open_value and not close_value:
-                ClinicHours.objects.filter(clinic=clinic, day=day).delete()
-                continue
-
-            if not open_value or not close_value:
-                messages.error(request, f'{day.day_name}: enter both opening and closing time, or leave both empty.')
-                return redirect('clinic_hours')
-
-            try:
-                open_time = datetime.strptime(open_value, '%H:%M').time()
-                close_time = datetime.strptime(close_value, '%H:%M').time()
-            except ValueError:
-                messages.error(request, f'{day.day_name}: enter times as HH:MM.')
-                return redirect('clinic_hours')
-            if open_time >= close_time:
-                messages.error(request, f'{day.day_name}: closing time must be after opening time.')
-                return redirect('clinic_hours')
-
-            ClinicHours.objects.update_or_create(
-                clinic=clinic, day=day,
-                defaults={'open_time': open_time, 'close_time': close_time},
-            )
-
-        messages.success(request, 'Clinic hours updated.')
-        return redirect('clinic_hours')
-
-    existing = {
-        row.day_id: row
-        for row in ClinicHours.objects.filter(clinic=clinic).select_related('day')
-    }
-    rows = []
-    for day in days:
-        record = existing.get(day.day_id)
-        rows.append({
-            'day': day,
-            'open_time': record.open_time.strftime('%H:%M') if record else '',
-            'close_time': record.close_time.strftime('%H:%M') if record else '',
-        })
-
-    return render(request, 'accounts/clinic_hours.html', {'clinic': clinic, 'rows': rows})
+def redirect_based_on_role(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return None
+    from accounts.models import User, Patient, Clinic, ClinicStaff
+    from doctors.models import Doctor
+    try:
+        user = User.objects.select_related('role').get(user_id=user_id)
+        if user.account_status.lower() != 'active':
+            return None
+        role = user.role.role_name.lower()
+        if role in {'doctor', 'clinic', 'clinic staff'} and not user.is_verified:
+            if role == 'doctor':
+                doctor = Doctor.objects.filter(user=user).first()
+                if doctor and doctor.license_verification_status == 'Rejected':
+                    return 'doctor_dashboard'
+            return None
+        if role == 'patient':
+            return 'patient_dashboard' if Patient.objects.filter(user=user).exists() else None
+        if role == 'doctor':
+            return 'doctor_dashboard' if Doctor.objects.filter(user=user).exists() else None
+        if role == 'clinic':
+            return 'clinic_dashboard' if Clinic.objects.filter(user=user).exists() else None
+        if role == 'clinic staff':
+            return 'staff_dashboard' if ClinicStaff.objects.filter(user=user).exists() else None
+        if role == 'admin':
+            return 'admin_dashboard'
+    except Exception:
+        pass
+    return None

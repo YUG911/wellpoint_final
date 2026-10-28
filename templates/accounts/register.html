@@ -88,7 +88,7 @@
 
                     <div class="form-group">
 
-                        <label for="id_contact_number">
+                        <label for="id_phone">
                             Phone Number
                         </label>
 
@@ -183,7 +183,7 @@
                     <label class="terms-check" for="id_terms_accepted">
                         {{ form.terms_accepted }}
                         <span class="custom-checkbox"></span>
-                        <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</span>
+                        <span>I agree to the <a href="#" onclick="alert('Document not available for this demo.'); return false;">Terms of Service</a> and <a href="#" onclick="alert('Document not available for this demo.'); return false;">Privacy Policy</a>.</span>
                     </label>
                     {{ form.terms_accepted.errors }}
 
@@ -257,7 +257,7 @@ document.querySelectorAll('.toggle-password').forEach(function(button) {
             this.querySelector('i').classList.add('fa-eye');
 
             this.setAttribute('aria-label', 'Show password');
-        }
+        } 
 
     });
 

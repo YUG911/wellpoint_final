@@ -1,149 +1,94 @@
-import random
-from django.core.management.base import BaseCommand
-from django.contrib.auth.hashers import make_password
-from accounts.models import (
-    Role, StateMaster, CityMaster, User, Clinic, DayMaster
-)
-from doctors.models import (
-    Doctor, SpecializationMaster, DoctorSpecialization,
-    DoctorClinic, DoctorAvailability
-)
 
+import random
+from datetime import timedelta
+from django.contrib.auth.hashers import make_password
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from accounts.models import Admin, CityMaster, Clinic, DayMaster, Patient, Role, StateMaster, User
+from appointments.models import Appointment, Payment
+from doctors.models import (Doctor, DoctorAvailability, DoctorClinic,
+                            DoctorQualification, DoctorSpecialization,
+                            QualificationMaster, SpecializationMaster)
 
 class Command(BaseCommand):
-    help = "Seeds idempotent demo data for WellPoint (State, City, Clinics, Doctors, Availability)"
+    help = 'Create 25-40 fictional demo doctors for Seminar 4 without duplicates.'
 
-    def add_arguments(self, parser):
-        parser.add_argument('--clear', action='store_true', help="Clear ONLY demo data ending with @demo.test")
+    def get_or_create_user(self, role, email, contact_number, full_name):
+        user, _ = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'full_name': full_name,
+                'contact_number': contact_number,
+                'password_hash': make_password('Seminar4Demo!'),
+                'role': role,
+                'is_verified': True,
+                'account_status': 'active'
+            }
+        )
+        return user
 
     def handle(self, *args, **options):
-        if options['clear']:
-            self.stdout.write("Clearing demo data...")
-            User.objects.filter(email__endswith='@demo.test').delete()
-            self.stdout.write(self.style.SUCCESS("Cleared demo data successfully."))
-            return
+        roles = {}
+        for r in ['Patient', 'Doctor', 'Clinic', 'Clinic Staff', 'Admin']:
+            roles[r], _ = Role.objects.get_or_create(role_name=r)
 
-        self.stdout.write("Starting demo data seed...")
+        state, _ = StateMaster.objects.get_or_create(state_name='Gujarat')
+        cities = ['Ahmedabad', 'Gandhinagar', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar']
+        city_objs = [CityMaster.objects.get_or_create(state=state, city_name=c)[0] for c in cities]
 
-        # 1. Setup Roles & Days
-        role_clinic, _ = Role.objects.get_or_create(role_name='Clinic')
-        role_doctor, _ = Role.objects.get_or_create(role_name='Doctor')
-        days = list(DayMaster.objects.all())
-        if not days:
-            for name in ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'):
-                DayMaster.objects.get_or_create(day_name=name)
-            days = list(DayMaster.objects.all())
-
-        # 2. Setup State & Cities
-        state_gujarat, _ = StateMaster.objects.get_or_create(state_name='Gujarat')
-        city_names = ['Ahmedabad', 'Gandhinagar', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar']
-        cities = []
-        for cname in city_names:
-            city, _ = CityMaster.objects.get_or_create(state=state_gujarat, city_name=cname)
-            cities.append(city)
-            
-        # Also fix the placeholder if it exists
-        placeholder_state = StateMaster.objects.filter(state_name='Workflow State').first()
-        if placeholder_state:
-            placeholder_state.state_name = 'Maharashtra'
-            placeholder_state.save()
-        placeholder_city = CityMaster.objects.filter(city_name='Workflow City').first()
-        if placeholder_city:
-            placeholder_city.city_name = 'Mumbai'
-            placeholder_city.save()
-
-        # 3. Setup Specializations
-        spec_names = [
-            'General Physician', 'Cardiologist', 'Dermatologist', 'ENT Specialist',
-            'Gastroenterologist', 'Neurologist', 'Ophthalmologist', 'Orthopedic Surgeon',
-            'Psychiatrist', 'Urologist'
-        ]
-        specializations = []
-        for sname in spec_names:
-            spec, _ = SpecializationMaster.objects.get_or_create(specialization_name=sname)
-            specializations.append(spec)
-
-        # 4. Create Clinics
         clinics = []
-        clinic_lats = [23.0225, 23.2156, 21.1702, 22.3072, 22.3039]
-        clinic_lons = [72.5714, 72.6369, 72.8311, 73.1812, 70.8022]
-        
-        for i in range(1, 6):
-            email = f"demo_clinic_{i}@demo.test"
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'full_name': f"Demo Clinic {i}",
-                    'contact_number': f"990001000{i}",
-                    'password_hash': make_password('Secret123!'),
-                    'address': f"Demo Clinic Road {i}",
-                    'role': role_clinic,
-                    'is_verified': True,
-                    'account_status': 'Active'
-                }
-            )
-            city = cities[i % len(cities)]
+        for i, c in enumerate(city_objs):
+            user = self.get_or_create_user(roles['Clinic'], f'clinic{i}@demo.com', 9000000000+i, f'WellPoint {c.city_name} Center')
             clinic, _ = Clinic.objects.get_or_create(
-                user=user,
-                defaults={
-                    'clinic_name': f"WellPoint Demo Clinic {i}",
-                    'address': f"Demo Clinic Road {i}",
-                    'city': city,
-                    'contact_number': f"990001000{i}",
-                    'latitude': str(clinic_lats[i-1]),
-                    'longitude': str(clinic_lons[i-1])
-                }
+                user=user, defaults={'clinic_name': f'WellPoint {c.city_name} Center', 'address': f'10{i} Main St, {c.city_name}', 'city': c, 'contact_number': 9000000000+i, 'latitude': 23.0+i*0.1, 'longitude': 72.0+i*0.1}
             )
             clinics.append(clinic)
 
-        # 5. Create Doctors
-        doctor_idx = 1
-        for spec in specializations:
-            # 3 doctors per specialization
-            for _ in range(3):
-                email = f"demo_doc_{doctor_idx}@demo.test"
-                user, created = User.objects.get_or_create(
-                    email=email,
-                    defaults={
-                        'full_name': f"Dr. Demo {doctor_idx}",
-                        'contact_number': f"9900020{doctor_idx:03d}",
-                        'password_hash': make_password('Secret123!'),
-                        'address': f"Demo Doctor Road {doctor_idx}",
-                        'role': role_doctor,
-                        'is_verified': True,
-                        'account_status': 'Active'
-                    }
-                )
-                
-                doctor, _ = Doctor.objects.get_or_create(
+        specs = ['General Medicine', 'Cardiology', 'Dermatology', 'Pediatrics', 'Orthopedics', 'ENT', 'Ophthalmology', 'Gynecology', 'Neurology', 'Psychiatry']
+        spec_objs = {s: SpecializationMaster.objects.get_or_create(specialization_name=s)[0] for s in specs}
+
+        quals = ['MBBS', 'MD', 'MS', 'DNB', 'DO']
+        qual_objs = {q: QualificationMaster.objects.get_or_create(qualification_name=q)[0] for q in quals}
+
+        first_names = ['Amit', 'Priya', 'Rahul', 'Sneha', 'Vikram', 'Neha', 'Rohan', 'Anjali', 'Karan', 'Pooja', 'Suresh', 'Kavita', 'Ramesh', 'Sunita', 'Raj', 'Anita']
+        last_names = ['Patel', 'Sharma', 'Shah', 'Desai', 'Mehta', 'Joshi', 'Trivedi', 'Bhatt', 'Rathod', 'Chauhan']
+
+        doctor_count = 0
+        for s_name, spec in spec_objs.items():
+            for i in range(3):
+                fname = random.choice(first_names)
+                lname = random.choice(last_names)
+                full_name = f'Dr. {fname} {lname}'
+                email = f'dr.{fname.lower()}{lname.lower()}{i}{s_name[:3].lower()}@demo.com'
+
+                user = self.get_or_create_user(roles['Doctor'], email, 8000000000+doctor_count, full_name)
+                doctor, created = Doctor.objects.get_or_create(
                     user=user,
                     defaults={
-                        'doctor_name': f"Dr. Demo {doctor_idx}",
-                        'experience': random.randint(3, 20),
-                        'new_patient_fee': float(random.choice([300, 400, 500, 600, 800])),
-                        'old_patient_fee': float(random.choice([200, 300, 400, 500])),
-                        'about': "Experienced demo doctor for WellPoint platform."
+                        'doctor_name': full_name,
+                        'experience': random.randint(3, 25),
+                        'new_patient_fee': random.choice([500, 800, 1000, 1200]),
+                        'old_patient_fee': random.choice([300, 500, 800, 1000]),
+                        'about': f'Experienced {s_name} specialist.'
                     }
                 )
-                
-                # Assign Specialization
-                DoctorSpecialization.objects.get_or_create(doctor=doctor, specialization=spec)
-                
-                # Assign to 1 or 2 Clinics
-                doc_clinics = random.sample(clinics, k=random.randint(1, 2))
-                for c in doc_clinics:
-                    DoctorClinic.objects.get_or_create(doctor=doctor, clinic=c)
-                    
-                    # Create some availability
-                    DoctorAvailability.objects.get_or_create(
-                        doctor=doctor, clinic=c, day=days[0],
-                        defaults={'start_time': '09:00', 'end_time': '13:00'}
-                    )
-                    DoctorAvailability.objects.get_or_create(
-                        doctor=doctor, clinic=c, day=days[1],
-                        defaults={'start_time': '14:00', 'end_time': '18:00'}
-                    )
 
-                doctor_idx += 1
+                if created:
+                    DoctorSpecialization.objects.get_or_create(doctor=doctor, specialization=spec)
+                    DoctorQualification.objects.get_or_create(doctor=doctor, qualification=random.choice(list(qual_objs.values())))
+                    DoctorClinic.objects.get_or_create(doctor=doctor, clinic=random.choice(clinics))
 
-        self.stdout.write(self.style.SUCCESS(f"Successfully seeded demo data: {len(cities)} cities, {len(clinics)} clinics, {doctor_idx - 1} doctors."))
+                    for d_name in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+                        DayMaster.objects.get_or_create(day_name=d_name)
+                    days = DayMaster.objects.all()
+                    first_dc = doctor.doctor_clinic.first()
+                    if first_dc and first_dc.clinic:
+                        for d in days[:5]:
+                            DoctorAvailability.objects.get_or_create(
+                                doctor=doctor, clinic=first_dc.clinic, day=d,
+                                start_time='09:00:00', end_time='13:00:00'
+                            )
+                doctor_count += 1
+
+        self.stdout.write(self.style.SUCCESS(f'Successfully seeded {doctor_count} doctors.'))

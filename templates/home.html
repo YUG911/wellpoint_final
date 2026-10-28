@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load clinic_extras %}
 {% load static %}
 {% block title %}WellPoint | Healthcare Made Simple{% endblock %}
 {% block content %}
@@ -32,12 +33,12 @@
 
 <section class="search-section">
     <div class="container">
-        <form class="search-box" method="get" action="{% url 'doctor_list' %}">
+        <form class="search-box" method="get" action="{% url 'doctor_list' %}" id="searchForm">
             <div class="search-field">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <div>
                     <label for="search">Search Doctor</label>
-                    <input type="text" id="search" name="search" placeholder="Doctor name or specialization">
+                    <input type="text" id="searchInput" name="search" placeholder="Doctor name or specialization">
                 </div>
             </div>
             <div class="search-field">
@@ -50,19 +51,20 @@
                     </select>
                 </div>
             </div>
-            <div class="search-field">
+            <div class="search-field" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
                 <i class="fa-solid fa-location-dot"></i>
-                <div>
-                    <label for="location">Location</label>
-                    <div class="location-input-wrapper">
-                        <button type="button" class="location-trigger" id="locationTrigger" aria-label="Use current location" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa-solid fa-location-dot"></i>
-                        </button>
-                        <input type="text" id="location" name="location" placeholder="Enter city or use current location" autocomplete="off">
-                    </div>
+                <div style="flex: 1; min-width: 0;">
+                    <label for="locationInput">Location</label>
+                    <input type="text" id="locationInput" name="location" placeholder="City or locality">
                 </div>
+                <button type="button" id="useLocationBtn" class="use-location-btn" title="Use my current location" aria-label="Use my current location" style="margin-left: 8px;">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <span class="location-btn-text">Near Me</span>
+                </button>
             </div>
-            <button type="submit" class="btn btn-primary search-btn">Search Doctors <i class="fa-solid fa-arrow-right"></i></button>
+            <input type="hidden" name="user_lat" id="userLatInput" value="">
+            <input type="hidden" name="user_lng" id="userLngInput" value="">
+            <button type="submit" class="btn btn-primary search-btn" id="searchButton">Search Doctors <i class="fa-solid fa-arrow-right"></i></button>
         </form>
     </div>
 </section>
@@ -96,7 +98,7 @@
             {% for doctor in doctors %}
             <article class="doctor-card">
                 <div class="doctor-image">
-                    <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d" alt="{{ doctor.doctor_name }}">
+                    <img src="{{ doctor.doctor_id|get_doctor_image }}" alt="{{ doctor.doctor_name }}">
                 </div>
                 <div class="doctor-info">
                     <h3>{{ doctor.doctor_name }}</h3>
@@ -131,38 +133,6 @@
 
 {% endblock %}
 
-<div class="location-popup" id="locationPopup" role="dialog" aria-label="Choose location" hidden>
-    <div class="location-popup-header">
-        <span class="location-popup-title"><i class="fa-solid fa-location-dot"></i> Choose Location</span>
-        <button type="button" class="location-popup-close" id="locationPopupClose" aria-label="Close">&times;</button>
-    </div>
-
-    <button type="button" class="location-option" id="useCurrentLocation">
-        <i class="fa-solid fa-crosshairs"></i>
-        <span>Use Current Location</span>
-    </button>
-
-    <div class="location-popup-separator"><span>OR</span></div>
-
-    <label class="location-popup-label" for="locationManualInput">Enter location manually</label>
-    <input type="text" id="locationManualInput" class="location-manual-input" placeholder="Search area/locality..." autocomplete="off">
-    <div class="location-examples" id="locationExamples">
-        <button type="button" class="location-chip">Ranip</button>
-        <button type="button" class="location-chip">Bapunagar</button>
-        <button type="button" class="location-chip">Kalupur</button>
-        <button type="button" class="location-chip">Bopal</button>
-        <button type="button" class="location-chip">Navrangpura</button>
-        <button type="button" class="location-chip">Maninagar</button>
-        <button type="button" class="location-chip">Satellite</button>
-    </div>
-
-    <p class="location-message" id="locationMessage" role="status" hidden></p>
-
-    <div class="location-popup-actions">
-        <button type="button" class="location-apply" id="locationApply">Apply Location</button>
-    </div>
-</div>
-
 {% block extra_js %}
-<script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/doctors.js' %}"></script>
 {% endblock %}
