@@ -19,8 +19,8 @@ class AppointmentWorkflowTests(TestCase):
         self.patient = Patient.objects.create(user=self.patient_user, date_of_birth='1990-01-01')
         clinic_user = User.objects.create(full_name='Clinic', email='clinic@example.test', contact_number=9010000002, password_hash=make_password('Secret123!'), role=self.roles['Clinic'])
         self.clinic = Clinic.objects.create(user=clinic_user, clinic_name='Clinic', address='Address', city=city, contact_number=9010000002)
-        doctor_user = User.objects.create(full_name='Aarav Sharma', email='doctor@example.test', contact_number=9010000003, password_hash=make_password('Secret123!'), role=self.roles['Doctor'])
-        self.doctor = Doctor.objects.create(user=doctor_user, doctor_name='Aarav Sharma', new_patient_fee=500, old_patient_fee=300)
+        doctor_user = User.objects.create(full_name='Aarav Sharma', email='doctor@example.test', contact_number=9010000003, password_hash=make_password('Secret123!'), role=self.roles['Doctor'], is_verified=True)
+        self.doctor = Doctor.objects.create(user=doctor_user, doctor_name='Aarav Sharma', new_patient_fee=500, old_patient_fee=300, license_verification_status='Approved')
         DoctorClinic.objects.create(doctor=self.doctor, clinic=self.clinic)
         self.day_date = timezone.localdate() + timedelta(days=1)
         self.day, _ = DayMaster.objects.get_or_create(day_name=self.day_date.strftime('%A'))
@@ -205,3 +205,51 @@ class AppointmentWorkflowTests(TestCase):
         self.assertRedirects(res, reverse('my_appointments'))
         appt.refresh_from_db()
         self.assertEqual(str(appt.appointment_time), '10:30:00')
+
+    def test_booking_page_renders_unique_slot_radios(self):
+        # GET booking page should render unique selected_slot radios
+        res = self.client.get(reverse('book_appointment', args=[self.doctor.pk]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'name="selected_slot"')
+        expected_compound_value = f"{self.day_date.isoformat()}|10:00|{self.clinic.pk}"
+        self.assertContains(res, expected_compound_value)
+
+    def test_booking_rejects_unavailable_slot(self):
+        # Time outside doctor availability (e.g. 04:00 AM) must be rejected by server
+        res = self.client.post(reverse('book_appointment', args=[self.doctor.pk]), {
+            'selected_slot': f"{self.day_date.isoformat()}|04:00|{self.clinic.pk}",
+            'clinic_id': self.clinic.pk,
+            'appointment_date': self.day_date.isoformat(),
+            'appointment_time': '04:00',
+            'patient_type': 'New'
+        })
+        self.assertEqual(Appointment.objects.count(), 0)
+        self.assertRedirects(res, reverse('book_appointment', args=[self.doctor.pk]))
+
+    def test_booking_rejects_already_booked_slot(self):
+        # First booking succeeds
+        self.book(when='10:00')
+        self.assertEqual(Appointment.objects.count(), 1)
+
+        # Second booking for the same slot must be rejected
+        res = self.client.post(reverse('book_appointment', args=[self.doctor.pk]), {
+            'selected_slot': f"{self.day_date.isoformat()}|10:00|{self.clinic.pk}",
+            'clinic_id': self.clinic.pk,
+            'appointment_date': self.day_date.isoformat(),
+            'appointment_time': '10:00',
+            'patient_type': 'New'
+        })
+        self.assertEqual(Appointment.objects.count(), 1)
+        self.assertRedirects(res, reverse('book_appointment', args=[self.doctor.pk]))
+
+    def test_unverified_doctor_ineligible_for_booking(self):
+        unverified_user = User.objects.create(
+            full_name='Unverified Doc', email='unverified@example.test', contact_number=9010000099,
+            password_hash=make_password('Secret123!'), role=self.roles['Doctor'], is_verified=False
+        )
+        unverified_doc = Doctor.objects.create(
+            user=unverified_user, doctor_name='Dr. Unverified', new_patient_fee=500, old_patient_fee=300,
+            license_verification_status='Pending'
+        )
+        res = self.client.get(reverse('book_appointment', args=[unverified_doc.pk]))
+        self.assertRedirects(res, reverse('doctor_list'))

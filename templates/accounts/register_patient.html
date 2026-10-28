@@ -14,7 +14,7 @@
             <div class="register-content">
                 <h1>Patient Profile</h1>
                 <p>Complete your patient profile information.</p>
-                <form method="post">{% csrf_token %}
+                <form method="post" enctype="multipart/form-data">{% csrf_token %}
                     {% if form.errors %}<div class="error">{{ form.errors }}</div>{% endif %}
 
                     <div class="form-group">
@@ -41,6 +41,19 @@
                         <label for="id_emergency_contact">Emergency Contact</label>
                         <div class="input-wrapper"><i class="fa-solid fa-phone"></i>{{ form.emergency_contact }}</div>
                         {{ form.emergency_contact.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_photo_id">Photo ID Document</label>
+                        {{ form.photo_id }}
+                        <small style="color:#64748b;font-size:12px;margin-top:4px;display:block;">Upload a clear government-issued photo ID (PDF, JPG, PNG). Stored in secure, non-public storage.</small>
+                        {{ form.photo_id.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_id_number">ID Document Number <span style="color:#94a3b8;font-weight:400;font-size:12px;">(Optional)</span></label>
+                        {{ form.id_number }}
+                        {{ form.id_number.errors }}
                     </div>
 
                     <button type="submit" class="create-account-button"><span>Complete Registration</span><i class="fa-solid fa-arrow-right"></i></button>

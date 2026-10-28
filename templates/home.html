@@ -33,12 +33,12 @@
 
 <section class="search-section">
     <div class="container">
-        <form class="search-box" method="get" action="{% url 'doctor_list' %}">
+        <form class="search-box" method="get" action="{% url 'doctor_list' %}" id="searchForm">
             <div class="search-field">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <div>
                     <label for="search">Search Doctor</label>
-                    <input type="text" id="search" name="search" placeholder="Doctor name or specialization">
+                    <input type="text" id="searchInput" name="search" placeholder="Doctor name or specialization">
                 </div>
             </div>
             <div class="search-field">
@@ -51,14 +51,20 @@
                     </select>
                 </div>
             </div>
-            <div class="search-field">
+            <div class="search-field" style="position: relative; display: flex; align-items: center; justify-content: space-between;">
                 <i class="fa-solid fa-location-dot"></i>
-                <div>
-                    <label for="location">Location</label>
-                    <input type="text" id="location" name="location" placeholder="City or location">
+                <div style="flex: 1; min-width: 0;">
+                    <label for="locationInput">Location</label>
+                    <input type="text" id="locationInput" name="location" placeholder="City or locality">
                 </div>
+                <button type="button" id="useLocationBtn" class="use-location-btn" title="Use my current location" aria-label="Use my current location" style="margin-left: 8px;">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <span class="location-btn-text">Near Me</span>
+                </button>
             </div>
-            <button type="submit" class="btn btn-primary search-btn">Search Doctors <i class="fa-solid fa-arrow-right"></i></button>
+            <input type="hidden" name="user_lat" id="userLatInput" value="">
+            <input type="hidden" name="user_lng" id="userLngInput" value="">
+            <button type="submit" class="btn btn-primary search-btn" id="searchButton">Search Doctors <i class="fa-solid fa-arrow-right"></i></button>
         </form>
     </div>
 </section>
@@ -125,4 +131,8 @@
     </div>
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/doctors.js' %}"></script>
 {% endblock %}

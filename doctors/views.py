@@ -56,6 +56,14 @@ def doctor_list(request):
             user_lng = None
 
     is_geo_search = (user_lat is not None and user_lng is not None)
+
+    # If the user performed a manual location search (not 'Current Location' or 'Near Me'),
+    # prioritize manual search and discard any stale GPS coordinates
+    loc_clean = location.strip()
+    if loc_clean and loc_clean.lower() not in ('current location', 'my location', 'near me'):
+        is_geo_search = False
+        user_lat = None
+        user_lng = None
     
     predicted_specialization = None
     if symptoms:
@@ -78,50 +86,89 @@ def doctor_list(request):
         doctors = doctors.filter(
             doctor_specialization__specialization__specialization_name__iexact=specialization.strip()
         ).distinct()
-    if location:
-        # If geolocation is active and location is a label like 'Current Location', skip city string filter
-        if not (is_geo_search and location.strip().lower() in ('current location', 'my location', 'near me')):
+    if loc_clean:
+        # If geolocation is active and location is a label like 'Current Location', skip textual filter
+        if not (is_geo_search and loc_clean.lower() in ('current location', 'my location', 'near me')):
             doctors = doctors.filter(
-                doctor_clinic__clinic__city__city_name__icontains=location.strip()
+                Q(doctor_clinic__clinic__city__city_name__icontains=loc_clean) |
+                Q(doctor_clinic__clinic__address__icontains=loc_clean) |
+                Q(doctor_clinic__clinic__clinic_name__icontains=loc_clean)
             ).distinct()
 
     from doctors.models import SpecializationMaster
     specializations = SpecializationMaster.objects.all()
     cities = Clinic.objects.values_list('city__city_name', flat=True).distinct()
 
-    doctors = doctors.prefetch_related('doctor_clinic__clinic__city', 'doctor_specialization__specialization')
+    doctors = doctors.prefetch_related(
+        'doctor_clinic__clinic__city',
+        'doctor_specialization__specialization',
+        'doctoravailability_set__clinic',
+    )
 
     if is_geo_search:
+        request.session['user_lat'] = str(user_lat)
+        request.session['user_lng'] = str(user_lng)
         with_distance = []
         without_distance = []
         for doc in doctors:
+            available_clinic_ids = {av.clinic_id for av in doc.doctoravailability_set.all()}
             min_dist = None
             nearest_clinic = None
+
+            # 1. Primary: Closest clinic where doctor actually has availability
             for dc in doc.doctor_clinic.all():
-                clinic = dc.clinic
-                if clinic and clinic.latitude is not None and clinic.longitude is not None:
-                    try:
-                        c_lat = float(clinic.latitude)
-                        c_lng = float(clinic.longitude)
-                        dist = haversine_distance_km(user_lat, user_lng, c_lat, c_lng)
-                        if min_dist is None or dist < min_dist:
-                            min_dist = dist
-                            nearest_clinic = clinic
-                    except (ValueError, TypeError):
-                        continue
+                if dc.clinic_id in available_clinic_ids:
+                    clinic = dc.clinic
+                    if clinic and clinic.latitude is not None and clinic.longitude is not None:
+                        try:
+                            c_lat = float(clinic.latitude)
+                            c_lng = float(clinic.longitude)
+                            dist = haversine_distance_km(user_lat, user_lng, c_lat, c_lng)
+                            if min_dist is None or dist < min_dist:
+                                min_dist = dist
+                                nearest_clinic = clinic
+                        except (ValueError, TypeError):
+                            continue
+
+            # 2. Fallback: If no available clinic has coordinates or doctor has no availability set,
+            # consider any associated clinic with coordinates
+            if min_dist is None:
+                for dc in doc.doctor_clinic.all():
+                    clinic = dc.clinic
+                    if clinic and clinic.latitude is not None and clinic.longitude is not None:
+                        try:
+                            c_lat = float(clinic.latitude)
+                            c_lng = float(clinic.longitude)
+                            dist = haversine_distance_km(user_lat, user_lng, c_lat, c_lng)
+                            if min_dist is None or dist < min_dist:
+                                min_dist = dist
+                                nearest_clinic = clinic
+                        except (ValueError, TypeError):
+                            continue
+
             if min_dist is not None:
                 doc.distance_km = round(min_dist, 1)
                 doc.nearest_clinic = nearest_clinic
                 with_distance.append(doc)
             else:
                 doc.distance_km = None
-                first_dc = doc.doctor_clinic.first()
-                doc.nearest_clinic = first_dc.clinic if first_dc else None
+                chosen_clinic = None
+                for dc in doc.doctor_clinic.all():
+                    if dc.clinic_id in available_clinic_ids:
+                        chosen_clinic = dc.clinic
+                        break
+                if not chosen_clinic:
+                    first_dc = doc.doctor_clinic.first()
+                    chosen_clinic = first_dc.clinic if first_dc else None
+                doc.nearest_clinic = chosen_clinic
                 without_distance.append(doc)
 
         with_distance.sort(key=lambda d: d.distance_km)
         ordered_doctors = with_distance + without_distance
     else:
+        if loc_clean and loc_clean.lower() not in ('current location', 'my location', 'near me'):
+            request.session.pop('user_lat', None)
+            request.session.pop('user_lng', None)
         ordered_doctors = list(doctors)
         for doc in ordered_doctors:
             doc.distance_km = None
@@ -144,9 +191,35 @@ def doctor_detail(request, doctor_id):
     doctor = get_object_or_404(Doctor, doctor_id=doctor_id)
     specializations = doctor.doctor_specialization.all().select_related('specialization')
     qualifications = doctor.doctor_qualification.all().select_related('qualification')
-    clinic_links = doctor.doctor_clinic.all().select_related('clinic')
+    clinic_links = list(doctor.doctor_clinic.all().select_related('clinic', 'clinic__city'))
     clinics = [cl.clinic for cl in clinic_links]
     availabilities = DoctorAvailability.objects.filter(doctor=doctor).select_related('day', 'clinic')
+
+    user_lat = None
+    user_lng = None
+    lat_raw = (request.GET.get('user_lat') or request.session.get('user_lat') or '').strip()
+    lng_raw = (request.GET.get('user_lng') or request.session.get('user_lng') or '').strip()
+    if lat_raw and lng_raw:
+        try:
+            lat_f = float(lat_raw)
+            lng_f = float(lng_raw)
+            if -90.0 <= lat_f <= 90.0 and -180.0 <= lng_f <= 180.0:
+                user_lat = lat_f
+                user_lng = lng_f
+        except (ValueError, TypeError):
+            user_lat = None
+            user_lng = None
+
+    if user_lat is not None and user_lng is not None:
+        for cl in clinics:
+            if cl.latitude is not None and cl.longitude is not None:
+                try:
+                    cl.distance_km = round(haversine_distance_km(user_lat, user_lng, float(cl.latitude), float(cl.longitude)), 1)
+                except (ValueError, TypeError):
+                    cl.distance_km = None
+            else:
+                cl.distance_km = None
+        clinics.sort(key=lambda c: (c.distance_km is None, c.distance_km))
 
     reviews = Review.objects.filter(doctor=doctor).order_by('-created_at')[:5]
     avg_rating = 0
@@ -161,6 +234,8 @@ def doctor_detail(request, doctor_id):
         'availabilities': availabilities,
         'reviews': reviews,
         'avg_rating': round(avg_rating, 1),
+        'user_lat': user_lat if user_lat is not None else '',
+        'user_lng': user_lng if user_lng is not None else '',
     })
 
 

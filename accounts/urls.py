@@ -26,4 +26,8 @@ urlpatterns = [
     path("clinic/profile/", views.clinic_profile, name="clinic_profile"),
     path("clinic/add-doctor/", views.add_clinic_doctor, name="add_clinic_doctor"),
     path("get-cities/", views.get_cities, name="get_cities"),
+    path("documents/patient/<int:patient_id>/", views.view_patient_id_document, name="view_patient_id_document"),
+    path("documents/doctor/<int:doctor_id>/", views.view_doctor_license_document, name="view_doctor_license_document"),
+    path("patient/upload-id/", views.upload_patient_id, name="upload_patient_id"),
+    path("doctor/resubmit-license/", views.resubmit_doctor_license, name="resubmit_doctor_license"),
 ]

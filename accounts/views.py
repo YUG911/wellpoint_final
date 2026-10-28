@@ -1,11 +1,15 @@
+import mimetypes
 from datetime import date, timedelta
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
+from django.core.exceptions import ValidationError
+from django.http import Http404, HttpResponseForbidden, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.forms import (
     LoginForm, RegisterForm, PatientProfileForm,
     DoctorProfileForm, ClinicForm, AdminForm, UserProfileForm
 )
+from accounts.validators import validate_document_file
 from accounts.models import (
     User, Role, Patient, Clinic, ClinicStaff, Admin,
     CityMaster, StateMaster, DayMaster
@@ -58,8 +62,17 @@ def login_view(request):
 
                 role_lower = user.role.role_name.lower()
                 if role_lower in {'doctor', 'clinic', 'clinic staff'} and not user.is_verified:
-                    messages.warning(request, "Your account is pending administrative verification. Please wait for approval before logging in.")
-                    return render(request, 'accounts/login.html', {'form': form})
+                    if role_lower == 'doctor':
+                        from doctors.models import Doctor
+                        doctor = Doctor.objects.filter(user=user).first()
+                        if doctor and doctor.license_verification_status == 'Rejected':
+                            pass
+                        else:
+                            messages.warning(request, "Your account is pending administrative verification. Please wait for approval before logging in.")
+                            return render(request, 'accounts/login.html', {'form': form})
+                    else:
+                        messages.warning(request, "Your account is pending administrative verification. Please wait for approval before logging in.")
+                        return render(request, 'accounts/login.html', {'form': form})
 
                 request.session['user_id'] = user.user_id
                 messages.success(request, f"Welcome back, {user.full_name}!")
@@ -135,15 +148,20 @@ def register_patient(request):
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
-        form = PatientProfileForm(request.POST)
+        form = PatientProfileForm(request.POST, request.FILES)
         if form.is_valid():
             user = get_object_or_404(User, user_id=user_id)
+            photo_id_file = form.cleaned_data.get('photo_id')
+            id_num = form.cleaned_data.get('id_number', '').strip()
             Patient.objects.create(
                 user=user,
                 date_of_birth=form.cleaned_data['date_of_birth'],
                 gender=form.cleaned_data['gender'],
                 blood_group=form.cleaned_data['blood_group'],
-                emergency_contact=form.cleaned_data['emergency_contact']
+                emergency_contact=form.cleaned_data['emergency_contact'],
+                id_document=photo_id_file,
+                id_number=id_num,
+                id_verification_status='Pending'
             )
             del request.session['reg_user_id']
             del request.session['reg_role']
@@ -162,7 +180,7 @@ def register_doctor(request):
     if not user_id:
         return redirect('register')
     if request.method == 'POST':
-        form = DoctorProfileForm(request.POST)
+        form = DoctorProfileForm(request.POST, request.FILES)
         if form.is_valid():
             user = get_object_or_404(User, user_id=user_id)
             doctor = Doctor.objects.create(
@@ -171,7 +189,11 @@ def register_doctor(request):
                 experience=form.cleaned_data.get('experience'),
                 new_patient_fee=form.cleaned_data['new_patient_fee'],
                 old_patient_fee=form.cleaned_data['old_patient_fee'],
-                about=form.cleaned_data.get('about', '')
+                about=form.cleaned_data.get('about', ''),
+                license_number=form.cleaned_data.get('license_number', '').strip(),
+                issuing_authority=form.cleaned_data.get('issuing_authority', '').strip(),
+                license_document=form.cleaned_data.get('license_document'),
+                license_verification_status='Pending'
             )
             from doctors.models import DoctorSpecialization, DoctorQualification
             for spec in form.cleaned_data['specializations']:
@@ -435,6 +457,15 @@ def admin_dashboard(request):
     total_doctors = User.objects.filter(role__role_name='Doctor').count()
     total_clinics = User.objects.filter(role__role_name='Clinic').count()
 
+    from doctors.models import Doctor
+    pending_doctors = Doctor.objects.filter(
+        license_verification_status='Pending'
+    ).select_related('user').order_by('-created_at')
+
+    pending_patients = Patient.objects.filter(
+        id_verification_status='Pending'
+    ).exclude(id_document='').exclude(id_document__isnull=True).select_related('user').order_by('-created_at')
+
     context = {
         'total_users': User.objects.count(),
         'verified_users': verified,
@@ -442,7 +473,9 @@ def admin_dashboard(request):
         'total_patients': total_patients,
         'total_doctors': total_doctors,
         'total_clinics': total_clinics,
-        'unverified_users': User.objects.filter(is_verified=False).exclude(account_status='rejected')[:5],
+        'unverified_users': User.objects.filter(is_verified=False).exclude(account_status='rejected')[:10],
+        'pending_doctors': pending_doctors,
+        'pending_patients': pending_patients,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
@@ -453,11 +486,25 @@ def admin_dashboard(request):
 def profile(request):
     user = get_user_obj(request)
     form = UserProfileForm(request.POST or None, instance=user)
+    patient = None
+    doctor = None
+    role_lower = user.role.role_name.lower()
+    if role_lower == 'patient':
+        patient = Patient.objects.filter(user=user).first()
+    elif role_lower == 'doctor':
+        from doctors.models import Doctor
+        doctor = Doctor.objects.filter(user=user).first()
+
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Your profile has been updated.')
         return redirect('profile')
-    return render(request, 'accounts/profile.html', {'user': user, 'form': form})
+    return render(request, 'accounts/profile.html', {
+        'user': user,
+        'form': form,
+        'patient': patient,
+        'doctor': doctor,
+    })
 
 
 # ─── VERIFICATION ───────────────────────────────────────────────
@@ -468,7 +515,7 @@ def verify_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         action = request.POST.get('action')
-        remarks = request.POST.get('remarks', '')
+        remarks = request.POST.get('remarks', '').strip()
         target = get_object_or_404(User, user_id=user_id)
         admin = get_object_or_404(Admin, user=current_user(request))
 
@@ -480,14 +527,142 @@ def verify_user(request):
         VerificationLog.objects.create(
             user=target, admin=admin, status=status, remarks=remarks
         )
+
+        from doctors.models import Doctor
+        doc = Doctor.objects.filter(user=target).first()
+        pat = Patient.objects.filter(user=target).first()
+
         if action == 'approve':
             target.is_verified = True
-            target.save()
+            target.account_status = 'active'
+            target.save(update_fields=['is_verified', 'account_status'])
+            if doc:
+                doc.license_verification_status = 'Approved'
+                doc.rejection_reason = ''
+                doc.save(update_fields=['license_verification_status', 'rejection_reason'])
+            if pat:
+                pat.id_verification_status = 'Approved'
+                pat.id_rejection_reason = ''
+                pat.save(update_fields=['id_verification_status', 'id_rejection_reason'])
+            messages.success(request, f"User {target.full_name} {status.lower()}.")
         else:
-            target.account_status = 'rejected'
-            target.save()
-        messages.success(request, f"User {target.full_name} {status.lower()}.")
+            target.is_verified = False
+            if doc:
+                target.account_status = 'active'
+                target.save(update_fields=['is_verified', 'account_status'])
+                doc.license_verification_status = 'Rejected'
+                doc.rejection_reason = remarks or 'Medical license verification rejected by administrator.'
+                doc.save(update_fields=['license_verification_status', 'rejection_reason'])
+            elif pat:
+                target.account_status = 'active'
+                target.save(update_fields=['is_verified', 'account_status'])
+                pat.id_verification_status = 'Rejected'
+                pat.id_rejection_reason = remarks or 'Photo ID verification rejected by administrator.'
+                pat.save(update_fields=['id_verification_status', 'id_rejection_reason'])
+            else:
+                target.account_status = 'rejected'
+                target.save(update_fields=['is_verified', 'account_status'])
+            messages.success(request, f"User {target.full_name} {status.lower()}.")
     return redirect('admin_dashboard')
+
+
+# ─── SECURE DOCUMENT ACCESS ─────────────────────────────────────
+
+@login_required
+def view_patient_id_document(request, patient_id):
+    user = current_user(request)
+    patient = get_object_or_404(Patient, patient_id=patient_id)
+    is_admin = (user.role.role_name.lower() == 'admin')
+    is_owner = (patient.user_id == user.user_id)
+    if not (is_admin or is_owner):
+        return HttpResponseForbidden("You are not authorized to view this document.")
+    if not patient.id_document or not patient.id_document.name:
+        raise Http404("Document not found.")
+    try:
+        content_type, _ = mimetypes.guess_type(patient.id_document.name)
+        return FileResponse(patient.id_document.open('rb'), content_type=content_type or 'application/octet-stream')
+    except (FileNotFoundError, ValueError, OSError):
+        raise Http404("Document file could not be found.")
+
+
+@login_required
+def view_doctor_license_document(request, doctor_id):
+    user = current_user(request)
+    from doctors.models import Doctor
+    doctor = get_object_or_404(Doctor, doctor_id=doctor_id)
+    is_admin = (user.role.role_name.lower() == 'admin')
+    is_owner = (doctor.user_id == user.user_id)
+    if not (is_admin or is_owner):
+        return HttpResponseForbidden("You are not authorized to view this document.")
+    if not doctor.license_document or not doctor.license_document.name:
+        raise Http404("Document not found.")
+    try:
+        content_type, _ = mimetypes.guess_type(doctor.license_document.name)
+        return FileResponse(doctor.license_document.open('rb'), content_type=content_type or 'application/octet-stream')
+    except (FileNotFoundError, ValueError, OSError):
+        raise Http404("Document file could not be found.")
+
+
+@login_required
+@role_required('patient')
+def upload_patient_id(request):
+    user = current_user(request)
+    patient = get_object_or_404(Patient, user=user)
+    if request.method == 'POST':
+        photo_id_file = request.FILES.get('photo_id')
+        id_num = request.POST.get('id_number', '').strip()
+        if not photo_id_file:
+            messages.error(request, "Please choose a photo ID file to upload.")
+            return redirect('profile')
+        try:
+            validate_document_file(photo_id_file)
+        except ValidationError as e:
+            messages.error(request, e.message)
+            return redirect('profile')
+
+        patient.id_document = photo_id_file
+        if id_num:
+            patient.id_number = id_num
+        patient.id_verification_status = 'Pending'
+        patient.id_rejection_reason = ''
+        patient.save()
+        messages.success(request, "Photo ID submitted successfully for administrative review.")
+    return redirect('profile')
+
+
+@login_required
+@role_required('doctor')
+def resubmit_doctor_license(request):
+    user = current_user(request)
+    from doctors.models import Doctor
+    doctor = get_object_or_404(Doctor, user=user)
+    if request.method == 'POST':
+        license_num = request.POST.get('license_number', '').strip()
+        authority = request.POST.get('issuing_authority', '').strip()
+        doc_file = request.FILES.get('license_document')
+
+        referer = request.META.get('HTTP_REFERER', '')
+        redirect_target = 'profile' if 'profile' in referer and 'doctor_profile' not in referer else 'doctor_profile'
+
+        if not license_num or not authority:
+            messages.error(request, "License number and issuing authority are required.")
+            return redirect(redirect_target)
+
+        if doc_file:
+            try:
+                validate_document_file(doc_file)
+            except ValidationError as e:
+                messages.error(request, e.message)
+                return redirect(redirect_target)
+            doctor.license_document = doc_file
+
+        doctor.license_number = license_num
+        doctor.issuing_authority = authority
+        doctor.license_verification_status = 'Pending'
+        doctor.rejection_reason = ''
+        doctor.save()
+        messages.success(request, "Medical license details submitted for verification. Please wait for administrator review.")
+    return redirect('doctor_dashboard')
 
 
 def get_cities(request):
@@ -582,6 +757,10 @@ def redirect_based_on_role(request):
             return None
         role = user.role.role_name.lower()
         if role in {'doctor', 'clinic', 'clinic staff'} and not user.is_verified:
+            if role == 'doctor':
+                doctor = Doctor.objects.filter(user=user).first()
+                if doctor and doctor.license_verification_status == 'Rejected':
+                    return 'doctor_dashboard'
             return None
         if role == 'patient':
             return 'patient_dashboard' if Patient.objects.filter(user=user).exists() else None

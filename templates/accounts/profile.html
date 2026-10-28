@@ -34,6 +34,119 @@
             <div class="form-group"><label for="id_address">Address</label>{{ form.address }}{{ form.address.errors }}</div>
             <button class="btn btn-primary" type="submit">Save Profile</button>
         </form>
+
+        {% if patient %}
+        <div id="photo-id-section" style="margin-top:40px;padding-top:30px;border-top:1px solid #e2e8f0;max-width:620px;">
+            <h3 style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+                <i class="fa-solid fa-id-card" style="color:#2563eb;"></i> Photo ID Proof
+            </h3>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="font-size:13px;color:#64748b;font-weight:600;">Verification Status:</span>
+                    {% if patient.id_verification_status == 'Approved' %}
+                    <span class="available-badge" style="background:#dcfce7;color:#16a34a;">Approved</span>
+                    {% elif patient.id_verification_status == 'Rejected' %}
+                    <span class="available-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>
+                    {% else %}
+                    <span class="available-badge" style="background:#fef3c7;color:#92400e;">Pending</span>
+                    {% endif %}
+                </div>
+                {% if patient.id_number %}
+                <p style="margin:6px 0;font-size:13px;color:#475569;">
+                    <strong>ID Number:</strong> {{ patient.masked_id_number }}
+                </p>
+                {% endif %}
+                {% if patient.id_rejection_reason %}
+                <div style="background:#fee2e2;border-left:3px solid #dc2626;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:13px;color:#991b1b;">
+                    <strong>Rejection Reason:</strong> {{ patient.id_rejection_reason }}
+                </div>
+                {% endif %}
+                {% if patient.id_document %}
+                <div style="margin-top:12px;">
+                    <a href="{% url 'view_patient_id_document' patient.patient_id %}" target="_blank" class="btn btn-outline" style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-file-shield"></i> View Uploaded Document
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <h4 style="font-size:14px;margin-bottom:10px;color:#334155;">
+                {% if patient.id_document %}Update / Resubmit Photo ID{% else %}Upload Photo ID Document{% endif %}
+            </h4>
+            <form method="post" action="{% url 'upload_patient_id' %}" enctype="multipart/form-data">{% csrf_token %}
+                <div class="form-group">
+                    <label for="profile_photo_id">Select Photo ID Document (PDF, JPG, PNG)</label>
+                    <input type="file" name="photo_id" id="profile_photo_id" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                    <small style="color:#64748b;font-size:12px;display:block;margin-top:4px;">Secure document storage. Documents are accessible only to you and authorized clinical administrators.</small>
+                </div>
+                <div class="form-group">
+                    <label for="profile_id_number">ID Number <span style="color:#94a3b8;font-weight:400;font-size:12px;">(Optional)</span></label>
+                    <input type="text" name="id_number" id="profile_id_number" class="form-control" placeholder="Govt ID / Passport Number" value="{{ patient.id_number|default:'' }}">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:6px;">Upload Document</button>
+            </form>
+        </div>
+        {% elif doctor %}
+        <div id="license-section" style="margin-top:40px;padding-top:30px;border-top:1px solid #e2e8f0;max-width:620px;">
+            <h3 style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+                <i class="fa-solid fa-id-card" style="color:#2563eb;"></i> Medical License Verification
+            </h3>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="font-size:13px;color:#64748b;font-weight:600;">Verification Status:</span>
+                    {% if doctor.license_verification_status == 'Approved' %}
+                    <span class="available-badge" style="background:#dcfce7;color:#16a34a;">Approved</span>
+                    {% elif doctor.license_verification_status == 'Rejected' %}
+                    <span class="available-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>
+                    {% else %}
+                    <span class="available-badge" style="background:#fef3c7;color:#92400e;">Pending</span>
+                    {% endif %}
+                </div>
+                {% if doctor.license_number %}
+                <p style="margin:6px 0;font-size:13px;color:#475569;">
+                    <strong>License Number:</strong> {{ doctor.license_number }}
+                </p>
+                {% endif %}
+                {% if doctor.issuing_authority %}
+                <p style="margin:6px 0;font-size:13px;color:#475569;">
+                    <strong>Issuing Authority:</strong> {{ doctor.issuing_authority }}
+                </p>
+                {% endif %}
+                {% if doctor.rejection_reason %}
+                <div style="background:#fee2e2;border-left:3px solid #dc2626;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:13px;color:#991b1b;">
+                    <strong>Rejection Reason:</strong> {{ doctor.rejection_reason }}
+                </div>
+                {% endif %}
+                {% if doctor.license_document %}
+                <div style="margin-top:12px;">
+                    <a href="{% url 'view_doctor_license_document' doctor.doctor_id %}" target="_blank" class="btn btn-outline" style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-file-shield"></i> View License Document
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <h4 style="font-size:14px;margin-bottom:10px;color:#334155;">
+                {% if doctor.license_document %}Update / Resubmit Medical License{% else %}Upload Medical License Details{% endif %}
+            </h4>
+            <form method="post" action="{% url 'resubmit_doctor_license' %}" enctype="multipart/form-data">{% csrf_token %}
+                <div class="form-group">
+                    <label for="profile_license_number">License / Registration Number *</label>
+                    <input type="text" name="license_number" id="profile_license_number" class="form-control" value="{{ doctor.license_number|default:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile_issuing_authority">Issuing Authority *</label>
+                    <input type="text" name="issuing_authority" id="profile_issuing_authority" class="form-control" value="{{ doctor.issuing_authority|default:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile_license_doc">License Document (PDF, JPG, PNG)</label>
+                    <input type="file" name="license_document" id="profile_license_doc" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <small style="color:#64748b;font-size:12px;display:block;margin-top:4px;">Secure document storage. Documents are accessible only to you and authorized clinical administrators.</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:6px;">Submit for Verification</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

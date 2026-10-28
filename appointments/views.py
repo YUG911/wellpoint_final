@@ -21,7 +21,50 @@ def book_appointment(request, doctor_id):
         messages.warning(request, 'Please complete your patient profile first.')
         return redirect('register_patient')
     doctor = get_object_or_404(Doctor, doctor_id=doctor_id)
-    clinics = doctor.doctor_clinic.all().select_related('clinic')
+    if not doctor.user.is_verified or getattr(doctor, 'license_verification_status', 'Pending') != 'Approved' or doctor.user.account_status.lower() != 'active':
+        messages.error(request, "This doctor is not currently verified or eligible for booking.")
+        return redirect('doctor_list')
+    from doctors.views import haversine_distance_km
+
+    # Read location coordinates if provided (via GET query or session)
+    user_lat = None
+    user_lng = None
+    lat_raw = (request.GET.get('user_lat') or request.session.get('user_lat') or '').strip()
+    lng_raw = (request.GET.get('user_lng') or request.session.get('user_lng') or '').strip()
+    if lat_raw and lng_raw:
+        try:
+            lat_f = float(lat_raw)
+            lng_f = float(lng_raw)
+            if -90.0 <= lat_f <= 90.0 and -180.0 <= lng_f <= 180.0:
+                user_lat = lat_f
+                user_lng = lng_f
+        except (ValueError, TypeError):
+            user_lat = None
+            user_lng = None
+
+    doctor_clinics = list(doctor.doctor_clinic.all().select_related('clinic', 'clinic__city'))
+
+    if user_lat is not None and user_lng is not None:
+        for dc in doctor_clinics:
+            cl = dc.clinic
+            if cl.latitude is not None and cl.longitude is not None:
+                try:
+                    dist = haversine_distance_km(user_lat, user_lng, float(cl.latitude), float(cl.longitude))
+                    dc.distance_km = round(dist, 1)
+                    cl.distance_km = dc.distance_km
+                except (ValueError, TypeError):
+                    dc.distance_km = None
+                    cl.distance_km = None
+            else:
+                dc.distance_km = None
+                cl.distance_km = None
+        doctor_clinics.sort(key=lambda dc: (dc.distance_km is None, dc.distance_km))
+    else:
+        for dc in doctor_clinics:
+            dc.distance_km = None
+            dc.clinic.distance_km = None
+
+    clinics = doctor_clinics
 
     if request.method == 'POST':
         clinic_id = request.POST.get('clinic_id')
@@ -34,11 +77,9 @@ def book_appointment(request, doctor_id):
         if selected_slot and '|' in selected_slot:
             parts = [p.strip() for p in selected_slot.split('|')]
             if len(parts) >= 2:
-                if not appointment_date:
-                    appointment_date = parts[0]
-                if not appointment_time:
-                    appointment_time = parts[1]
-                if len(parts) >= 3 and not clinic_id:
+                appointment_date = parts[0]
+                appointment_time = parts[1]
+                if len(parts) >= 3 and parts[2]:
                     clinic_id = parts[2]
 
         clinic = None
@@ -52,7 +93,7 @@ def book_appointment(request, doctor_id):
             clinic = clinics[0].clinic
 
         if not clinic:
-            if clinics.exists():
+            if clinics:
                 clinic = clinics[0].clinic
             else:
                 messages.error(request, "This doctor is not currently associated with a clinic.")
@@ -135,6 +176,7 @@ def book_appointment(request, doctor_id):
         status__in=['Pending', 'Confirmed']
     ).values_list('appointment_date', 'appointment_time')
 
+    clinic_slot_counts = {}
     for date_str, data in available_slots.items():
         d = data['date']
         day_qs = availabilities.filter(day__day_name__iexact=d.strftime('%A'))
@@ -157,6 +199,7 @@ def book_appointment(request, doctor_id):
                 slot_entry = {'time': slot_time, 'clinic_id': avail_obj.clinic.clinic_id}
                 if not already_booked and slot_entry not in data['slots']:
                     data['slots'].append(slot_entry)
+                    clinic_slot_counts[avail_obj.clinic.clinic_id] = clinic_slot_counts.get(avail_obj.clinic.clinic_id, 0) + 1
                 current += interval
         
         # Sort slots chronologically
@@ -165,11 +208,38 @@ def book_appointment(request, doctor_id):
     # Filter out dates with no slots
     available_slots = {k: v for k, v in available_slots.items() if v['slots']}
 
+    # Track slot availability per clinic
+    for dc in clinics:
+        dc.has_available_slots = (clinic_slot_counts.get(dc.clinic.clinic_id, 0) > 0)
+        dc.clinic.has_available_slots = dc.has_available_slots
+
+    # Pre-select clinic: explicit requested clinic > nearest clinic with available slots > first clinic
+    requested_clinic_raw = request.GET.get('clinic_id')
+    default_clinic_id = None
+    if requested_clinic_raw:
+        try:
+            rc_id = int(requested_clinic_raw)
+            if any(dc.clinic.clinic_id == rc_id for dc in clinics):
+                default_clinic_id = rc_id
+        except (ValueError, TypeError):
+            default_clinic_id = None
+
+    if not default_clinic_id:
+        for dc in clinics:
+            if dc.has_available_slots:
+                default_clinic_id = dc.clinic.clinic_id
+                break
+        if not default_clinic_id and clinics:
+            default_clinic_id = clinics[0].clinic.clinic_id
+
     return render(request, 'appointments/book_appointment.html', {
         'doctor': doctor,
         'patient': patient,
         'clinics': clinics,
+        'default_clinic_id': default_clinic_id,
         'available_slots': available_slots,
+        'user_lat': user_lat if user_lat is not None else '',
+        'user_lng': user_lng if user_lng is not None else '',
     })
 
 

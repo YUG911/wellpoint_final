@@ -472,6 +472,34 @@ img {
     white-space: nowrap;
 }
 
+.use-location-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #edf3ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.use-location-btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.use-location-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
 .section {
     padding: 100px 0;
 }

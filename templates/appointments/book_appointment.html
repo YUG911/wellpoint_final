@@ -44,9 +44,20 @@
             <h2><i class="fa-solid fa-hospital" style="color: #3b82f6;"></i> 1. Select Clinic</h2>
             <div class="radio-group">
                 {% for c in clinics %}
-                <label class="radio-item">
-                    <input type="radio" name="clinic_id" value="{{ c.clinic.clinic_id }}" {% if forloop.first %}checked{% endif %} required>
-                    <span>{{ c.clinic.clinic_name }}</span>
+                <label class="radio-item" style="display:flex; align-items:flex-start; gap:10px;">
+                    <input type="radio" name="clinic_id" value="{{ c.clinic.clinic_id }}" {% if c.clinic.clinic_id == default_clinic_id %}checked{% endif %} required style="margin-top:3px;">
+                    <span>
+                        <strong>{{ c.clinic.clinic_name }}</strong>
+                        {% if c.clinic.address %}<span style="color:#64748b; font-size:13px;"> &bull; {{ c.clinic.address }}</span>{% endif %}
+                        {% if c.distance_km is not None %}
+                            <span class="clinic-distance" style="color: #2563eb; font-weight: 600; font-size: 13px; margin-left: 6px;">
+                                <i class="fa-solid fa-route"></i> {{ c.distance_km }} km away
+                            </span>
+                        {% endif %}
+                        {% if not c.has_available_slots %}
+                            <span style="color: #ef4444; font-size: 12px; margin-left: 6px;">(No slots available)</span>
+                        {% endif %}
+                    </span>
                 </label>
                 {% empty %}
                 <p style="color:#ef4444;">This doctor is not currently available at a clinic.</p>

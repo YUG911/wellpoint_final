@@ -10,3 +10,12 @@ media/
 # Temporary scratch and patch scripts
 patch_*.py
 make_seed.py
+verify_tables.py
+# Local database backup and private documents
+db_before_license_status_fix.sqlite3
+db_backup_pre_postgres_migration.sqlite3
+datadump_*.json
+secure_documents/
+
+# Local model safety backups
+accounts/models.py.before_*.bak

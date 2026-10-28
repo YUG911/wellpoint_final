@@ -73,12 +73,13 @@ const mobileMenu =
 // =========================
 
 function filterDoctors() {
+    if (!doctorsList || !doctorCards || doctorCards.length === 0) return;
 
     const searchValue =
-        searchInput.value.toLowerCase();
+        searchInput ? searchInput.value.toLowerCase() : "";
 
     const locationValue =
-        locationInput.value.toLowerCase();
+        locationInput ? locationInput.value.toLowerCase() : "";
 
 
     // Selected specializations
@@ -100,10 +101,8 @@ function filterDoctors() {
 
     // Selected experience
 
-    const selectedExperience =
-        document.querySelector(
-            'input[name="experience"]:checked'
-        ).value;
+    const selectedExpEl = document.querySelector('input[name="experience"]:checked');
+    const selectedExperience = selectedExpEl ? selectedExpEl.value : 'all';
 
 
     // Selected fee
@@ -144,17 +143,21 @@ function filterDoctors() {
                 .includes(searchValue);
 
 
-        // LOCATION MATCH (Respects geolocation and manual city filters)
+        // LOCATION MATCH (Respects geolocation and manual city/locality filters)
 
-        const isGeolocated = (userLatInput && userLatInput.value !== "" && userLngInput && userLngInput.value !== "") ||
-                             (locationInput && (locationInput.dataset.geolocated === "true" ||
-                                                locationValue === "current location" ||
-                                                locationValue === "my location"));
+        const locationValTrim = locationValue.trim();
+        const isLocGeolocated = (locationValTrim === "current location" ||
+                                 locationValTrim === "my location" ||
+                                 (locationInput && locationInput.dataset.geolocated === "true"));
+
+        const isGeolocated = (userLatInput && userLatInput.value !== "" &&
+                              userLngInput && userLngInput.value !== "" &&
+                              isLocGeolocated);
 
         const matchesLocation =
             isGeolocated ||
-            locationValue === "" ||
-            location.includes(locationValue);
+            locationValTrim === "" ||
+            location.includes(locationValTrim);
 
 
         // SPECIALIZATION MATCH
@@ -261,8 +264,10 @@ function filterDoctors() {
 
     // UPDATE COUNT
 
-    doctorCount.textContent =
-        visibleDoctors;
+    if (doctorCount) {
+        doctorCount.textContent =
+            visibleDoctors;
+    }
 
 
     // NO RESULTS
@@ -283,26 +288,25 @@ function filterDoctors() {
 
 
 // =========================
-// SEARCH BUTTON
+// SEARCH BUTTON & LIVE FILTERING (Doctor list page)
 // =========================
 
-if (searchButton) searchButton.addEventListener(
-    "click",
-    filterDoctors
-);
+if (doctorsList) {
+    if (searchButton) searchButton.addEventListener(
+        "click",
+        filterDoctors
+    );
 
+    if (searchInput) searchInput.addEventListener(
+        "input",
+        filterDoctors
+    );
 
-// Live search
-
-if (searchInput) searchInput.addEventListener(
-    "input",
-    filterDoctors
-);
-
-if (locationInput) locationInput.addEventListener(
-    "input",
-    filterDoctors
-);
+    if (locationInput) locationInput.addEventListener(
+        "input",
+        filterDoctors
+    );
+}
 
 
 // =========================
@@ -488,7 +492,7 @@ if (useLocationBtn) {
     });
 }
 
-// Clear coordinates if patient types a city manually
+// Clear coordinates if patient types a city or locality manually
 if (locationInput) {
     locationInput.addEventListener("input", function () {
         const val = locationInput.value.toLowerCase().trim();
@@ -496,6 +500,17 @@ if (locationInput) {
             if (userLatInput) userLatInput.value = "";
             if (userLngInput) userLngInput.value = "";
             delete locationInput.dataset.geolocated;
+        }
+    });
+}
+
+if (searchForm) {
+    searchForm.addEventListener("submit", function () {
+        const val = locationInput ? locationInput.value.toLowerCase().trim() : "";
+        if (val !== "current location" && val !== "my location" && val !== "near me") {
+            if (userLatInput) userLatInput.value = "";
+            if (userLngInput) userLngInput.value = "";
+            if (locationInput) delete locationInput.dataset.geolocated;
         }
     });
 }

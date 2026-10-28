@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
     'accounts',
     'doctors',
     'appointments',
@@ -123,21 +124,46 @@ WSGI_APPLICATION = 'clinic_booking.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-database_url = os.environ.get('DATABASE_URL')
+database_url = (
+    os.environ.get('POSTGRES_URL')
+    or os.environ.get('POSTGRES_PRISMA_URL')
+    or os.environ.get('POSTGRES_URL_NON_POOLING')
+    or os.environ.get('DATABASE_URL')
+)
+postgres_host = os.environ.get('POSTGRES_HOST')
+postgres_database = os.environ.get('POSTGRES_DATABASE')
 mysql_host = os.environ.get('MYSQL_HOST')
 mysql_database = os.environ.get('MYSQL_DATABASE')
+db_conn_max_age = int(os.environ.get('DB_CONN_MAX_AGE', '600'))
 
 if database_url:
-    # 1. Primary: DATABASE_URL connection string (MySQL, PostgreSQL, etc.)
+    # 1. Primary: PostgreSQL / Neon Marketplace connection string (or DATABASE_URL)
     import dj_database_url
     DATABASES = {
-        'default': dj_database_url.config(
-            env='DATABASE_URL',
-            conn_max_age=600,
+        'default': dj_database_url.parse(
+            database_url,
+            conn_max_age=db_conn_max_age,
         )
     }
+elif postgres_host or postgres_database:
+    # 2. Discrete PostgreSQL environment variables
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': postgres_database or '',
+            'USER': os.environ.get('POSTGRES_USER', ''),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+            'HOST': postgres_host or 'localhost',
+            'PORT': str(os.environ.get('POSTGRES_PORT', '5432')),
+            'CONN_MAX_AGE': db_conn_max_age,
+            'OPTIONS': {
+                'sslmode': os.environ.get('POSTGRES_SSLMODE', 'require' if IS_PRODUCTION else 'prefer'),
+                'connect_timeout': 10,
+            },
+        }
+    }
 elif mysql_host or mysql_database:
-    # 2. Discrete MySQL environment variables (Vercel production shared variables)
+    # 3. Discrete MySQL environment variables (legacy cloud fallback)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -146,34 +172,40 @@ elif mysql_host or mysql_database:
             'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
             'HOST': mysql_host or 'localhost',
             'PORT': str(os.environ.get('MYSQL_PORT', '3306')),
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': db_conn_max_age,
             'OPTIONS': {
                 'charset': 'utf8mb4',
             },
         }
     }
 elif IS_PRODUCTION:
-    # 3. Fail fast in production with a clear error rather than silently using ephemeral SQLite
+    # 4. Fail fast in production with a clear error rather than silently using ephemeral SQLite
     raise ImproperlyConfigured(
         "Production database configuration is missing. "
-        "Please configure MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, and MYSQL_PASSWORD "
-        "(or DATABASE_URL) in Vercel environment variables. "
+        "Please configure POSTGRES_URL or DATABASE_URL (or POSTGRES_HOST, POSTGRES_DATABASE, etc.) "
+        "in Vercel environment variables. "
         "SQLite cannot be used in serverless production as file writes do not persist."
     )
 else:
-    # 4. Safe local development fallback
+    # 5. Safe local development fallback
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
-    options = DATABASES['default'].setdefault('OPTIONS', {})
-    options.pop('ssl-mode', None)
-    options.pop('ssl_mode', None)
-    options['ssl'] = {'check_hostname': False}
-    options.setdefault('charset', 'utf8mb4')
+
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    pg_opts = DATABASES['default'].setdefault('OPTIONS', {})
+    if database_url and ('neon.tech' in database_url or 'sslmode' in database_url):
+        pg_opts.setdefault('sslmode', os.environ.get('POSTGRES_SSLMODE', 'require'))
+    pg_opts.setdefault('connect_timeout', 10)
+elif DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+    my_opts = DATABASES['default'].setdefault('OPTIONS', {})
+    my_opts.pop('ssl-mode', None)
+    my_opts.pop('ssl_mode', None)
+    my_opts['ssl'] = {'check_hostname': False}
+    my_opts.setdefault('charset', 'utf8mb4')
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
@@ -218,6 +250,36 @@ STATICFILES_DIRS = [
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Secure document uploads (not publicly accessible)
+SECURE_DOCUMENTS_ROOT = BASE_DIR / 'secure_documents'
+
+# Cloudflare R2 Storage (Persistent & Private Document Storage for Production/Vercel)
+R2_ACCOUNT_ID = os.environ.get('R2_ACCOUNT_ID')
+R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID')
+R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY')
+R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME')
+
+IS_VERCEL = bool(
+    os.environ.get('VERCEL') == '1'
+    or os.environ.get('VERCEL_ENV') in ('production', 'preview', 'development')
+)
+
+if IS_VERCEL:
+    missing_r2_vars = [
+        var for var, val in [
+            ('R2_ACCOUNT_ID', R2_ACCOUNT_ID),
+            ('R2_ACCESS_KEY_ID', R2_ACCESS_KEY_ID),
+            ('R2_SECRET_ACCESS_KEY', R2_SECRET_ACCESS_KEY),
+            ('R2_BUCKET_NAME', R2_BUCKET_NAME),
+        ] if not val
+    ]
+    if missing_r2_vars:
+        raise ImproperlyConfigured(
+            f"Missing required Cloudflare R2 storage environment variables on Vercel: {', '.join(missing_r2_vars)}. "
+            "Patient photo ID documents and doctor licenses cannot be stored on Vercel's ephemeral local filesystem. "
+            "Please configure R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME in your Vercel project environment variables."
+        )
 
 # Authentication settings
 LOGIN_URL = 'login'
