@@ -1,10 +1,12 @@
 import io
 import os
+from pathlib import Path
 from datetime import date
 from unittest import mock
 from PIL import Image
 import pypdf  # strict PDF test fixture generator
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -507,6 +509,17 @@ class DocumentUploadValidationTests(TestCase):
         self.spec = SpecializationMaster.objects.create(specialization_name='Cardiology')
         self.qual = QualificationMaster.objects.create(qualification_name='MBBS')
 
+        self.admin_user = User.objects.create(
+            full_name='Admin Test',
+            email='admin_test@example.test',
+            contact_number=9012345670,
+            password_hash=make_password('Secret123!'),
+            role=self.roles['Admin'],
+            is_verified=True,
+            account_status='active',
+        )
+        self.admin = Admin.objects.create(user=self.admin_user, access_level='Super')
+
     def login_as(self, user):
         session = self.client.session
         session['user_id'] = user.user_id
@@ -816,6 +829,70 @@ class DocumentUploadValidationTests(TestCase):
         self.assertEqual(self.patient.id_verification_status, 'Pending')
         self.assertNotEqual(self.patient.id_verification_status, 'Approved')
 
+    def test_patient_id_upload_and_admin_review_workflow(self):
+        # 1. Patient uploads photo ID via profile
+        self.login_as(self.patient_user)
+        valid_pdf = SimpleUploadedFile('patient_id_card.pdf', make_valid_pdf_bytes(), content_type='application/pdf')
+        upload_res = self.client.post(reverse('upload_patient_id'), {
+            'photo_id': valid_pdf,
+            'id_number': 'AADHAAR-8899',
+        }, follow=True)
+        self.assertRedirects(upload_res, reverse('profile'))
+        self.assertContains(upload_res, 'Photo ID submitted successfully')
+        self.patient.refresh_from_db()
+        self.assertEqual(self.patient.id_verification_status, 'Pending')
+        self.assertEqual(self.patient.id_number, 'AADHAAR-8899')
+        self.assertTrue(bool(self.patient.id_document))
+
+        # 2. Admin views admin_dashboard: patient appears in Pending list with masked ID and name
+        self.login_as(self.admin_user)
+        dash_res = self.client.get(reverse('admin_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertContains(dash_res, self.patient_user.full_name)
+        self.assertContains(dash_res, self.patient.masked_id_number)
+        self.assertContains(dash_res, reverse('view_patient_id_document', args=[self.patient.patient_id]))
+
+        # 3. Admin views patient document
+        doc_res = self.client.get(reverse('view_patient_id_document', args=[self.patient.patient_id]))
+        self.assertEqual(doc_res.status_code, 200)
+        self.assertEqual(doc_res['Content-Type'], 'application/pdf')
+
+        # 4. Admin approves patient
+        approve_res = self.client.post(reverse('verify_user'), {
+            'user_id': self.patient_user.user_id,
+            'action': 'approve',
+            'remarks': 'Valid government ID verified',
+        }, follow=True)
+        self.assertRedirects(approve_res, reverse('admin_dashboard'))
+        self.patient.refresh_from_db()
+        self.patient_user.refresh_from_db()
+        self.assertEqual(self.patient.id_verification_status, 'Approved')
+        self.assertTrue(self.patient_user.is_verified)
+
+        # 5. Patient logs in: profile reflects Approved badge
+        self.login_as(self.patient_user)
+        prof_res = self.client.get(reverse('profile'))
+        self.assertEqual(prof_res.status_code, 200)
+        self.assertContains(prof_res, 'Approved')
+
+        # 6. Admin can also reject if needed
+        self.login_as(self.admin_user)
+        reject_res = self.client.post(reverse('verify_user'), {
+            'user_id': self.patient_user.user_id,
+            'action': 'reject',
+            'remarks': 'Photo is blurry. Please upload a clearer scan.',
+        }, follow=True)
+        self.assertRedirects(reject_res, reverse('admin_dashboard'))
+        self.patient.refresh_from_db()
+        self.assertEqual(self.patient.id_verification_status, 'Rejected')
+        self.assertEqual(self.patient.id_rejection_reason, 'Photo is blurry. Please upload a clearer scan.')
+
+        # Patient sees rejection reason on profile
+        self.login_as(self.patient_user)
+        prof_rej = self.client.get(reverse('profile'))
+        self.assertContains(prof_rej, 'Rejected')
+        self.assertContains(prof_rej, 'Photo is blurry. Please upload a clearer scan.')
+
     def test_doctor_license_resubmit_validation(self):
         self.login_as(self.doctor_user)
 
@@ -912,11 +989,13 @@ class ProductionStorageIntegrationTests(TestCase):
                 protected_storage.url('patient_ids/id_sample.pdf')
             self.assertIn('not accessible via a public URL', str(ctx2.exception))
 
-    def test_vercel_without_r2_raises_improperly_configured(self):
+    def test_vercel_without_r2_falls_back_to_local_storage(self):
         with mock.patch.dict(os.environ, {'VERCEL': '1'}, clear=True):
-            with self.assertRaises(ImproperlyConfigured) as ctx:
-                get_r2_config()
-            self.assertIn('Missing required Cloudflare R2 storage environment variables on Vercel', str(ctx.exception))
+            cfg = get_r2_config()
+            self.assertIsNone(cfg)
+            storage = protected_storage.get_storage()
+            self.assertEqual(storage.__class__.__name__, 'FileSystemStorage')
+            self.assertEqual(Path(storage.location).parts[-2:], ('tmp', 'secure_documents'))
 
     def test_partial_r2_env_vars_raises_improperly_configured(self):
         with mock.patch.dict(os.environ, {'R2_ACCOUNT_ID': 'acc123', 'R2_BUCKET_NAME': 'mybucket'}, clear=True):
@@ -929,7 +1008,7 @@ class ProductionStorageIntegrationTests(TestCase):
         self.assertEqual(deconstructed[0], 'django.core.files.storage.FileSystemStorage')
         self.assertEqual(deconstructed[1], ())
         self.assertIsNone(deconstructed[2]['base_url'])
-        self.assertEqual(str(deconstructed[2]['location']), str(get_secure_documents_root()))
+        self.assertEqual(str(deconstructed[2]['location']), str(Path(settings.BASE_DIR) / 'secure_documents'))
 
     def test_local_storage_file_operations_and_cleanup(self):
         from django.core.files.base import ContentFile
