@@ -50,7 +50,11 @@ elif IS_PRODUCTION and SECRET_KEY == 'django-insecure-default-key-replace-in-pro
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+if IS_PRODUCTION:
+    DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
+else:
+    DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes')
+
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '.vercel.app', 'wellpoint-tau.vercel.app']
 raw_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS') or os.environ.get('ALLOWED_HOSTS')
